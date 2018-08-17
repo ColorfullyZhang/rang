@@ -8,3 +8,13 @@
 /~$*
 /others
 /git
+/wx_ddq/ci/.htaccess
+/wx_ddq/app/.htaccess
+
+/wx_ddq/app/cache/*
+!/wx_ddq/app/cache/index.html
+
+/wx_ddq/app/logs/*
+!/wx_ddq/app/logs/index.html
+
+!/wx_ddq/app/*/.htaccess
