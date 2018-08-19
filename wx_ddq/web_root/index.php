@@ -23,6 +23,7 @@ switch (ENVIRONMENT) {
 
 $system_path = '../ci';
 $application_folder = '../app';
+$data_folder = '../data';
 $view_folder = '';
 
 if (defined('STDIN')) {
@@ -46,6 +47,7 @@ define('BASEPATH', $system_path);
 define('FCPATH', dirname(__FILE__).DIRECTORY_SEPARATOR);
 define('SYSDIR', basename(BASEPATH));
 
+/* APPPATH */
 if (is_dir($application_folder)) {
     if (($_temp = realpath($application_folder)) !== FALSE) {
         $application_folder = $_temp;
@@ -61,6 +63,23 @@ if (is_dir($application_folder)) {
 }
 define('APPPATH', $application_folder.DIRECTORY_SEPARATOR);
 
+/* DATAPATH */
+if (is_dir($data_folder)) {
+    if (($_temp = realpath($data_folder)) !== FALSE) {
+        $data_folder = $_temp;
+    } else {
+        $data_folder = strtr(rtrim($data_folder, '/\\'), '/\\', DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR);
+    }
+} elseif (is_dir(BASEPATH.$data_folder.DIRECTORY_SEPARATOR)) {
+    $data_folder = BASEPATH.strtr(trim($data_folder, '/\\'), '/\\', DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR);
+} else {
+    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+    echo 'Your data folder path does not appear to be set correctly. Please open the following file and correct this: '.SELF;
+    exit(3);
+}
+define('DATAPATH', $data_folder.DIRECTORY_SEPARATOR);
+
+/* VIEWPATH */
 if ( ! isset($view_folder[0]) && is_dir(APPPATH.'views'.DIRECTORY_SEPARATOR)) {
     $view_folder = APPPATH.'views';
 } elseif (is_dir($view_folder)) {
