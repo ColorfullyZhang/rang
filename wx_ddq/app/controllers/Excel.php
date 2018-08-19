@@ -22,24 +22,24 @@ class Excel extends CI_Controller {
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('B'.$r)->getValue() == $landmark) {
+            if ($activeSheet->getCell('A'.$r)->getValue() == $landmark) {
                 $data['landmark'] = $activeSheet->getCell('A'.$r)->getValue();
                 $data['address'] = $activeSheet->getCell('C'.$r)->getValue();
             }
         }
+        if (! isset($data['landmark'])) exit('Nothing Found!');
 
         $this->excel->setActiveSheetIndexByName('Customer');
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('D'.$r)->getValue() == $data['landmark']) {
+            if ($activeSheet->getCell('C'.$r)->getValue() == $data['landmark']) {
                 $data['companies'][] = array(
                     'name'    => $activeSheet->getCell('A'.$r)->getValue(),
-                    'address' => $activeSheet->getCell('E'.$r)->getValue(),
+                    'address' => $activeSheet->getCell('D'.$r)->getValue(),
                 );
             }
         }
-        if ($data['landmark'] == '') exit('Nothing Found!');
         $this->parser->parse('landmark', $data);
     }
 
@@ -50,13 +50,15 @@ class Excel extends CI_Controller {
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('B'.$r)->getValue() == $customer) {
+            if ($activeSheet->getCell('A'.$r)->getValue() == $customer) {
                 $data['customer'] = $activeSheet->getCell('A'.$r)->getValue();
-                $data['address'] = $activeSheet->getCell('E'.$r)->getValue();
-                $data['focus'] = $activeSheet->getCell('G'.$r)->getValue();
+                $data['landmark'] = $activeSheet->getCell('C'.$r)->getValue();
+                $data['address']  = $activeSheet->getCell('D'.$r)->getValue();
+                $data['confirm']  = $activeSheet->getCell('E'.$r)->getValue();
+                $data['focus']    = $activeSheet->getCell('F'.$r)->getValue();
             }
         }
-        if ($data['customer'] == '') exit('Nothing Found!');
+        if (! isset($data['customer'])) exit('Nothing Found!');
         $this->parser->parse('customer', $data);
     }
 
@@ -97,5 +99,25 @@ class Excel extends CI_Controller {
         }
         array_multisort($sort, $data);
         print_r($data);
+    }
+
+    public function Staff($staff = NULL) {
+        if (is_null($staff)) exit('Staff Needed!');
+
+        $this->excel->setActiveSheetIndexByName('Staff');
+        $activeSheet = $this->excel->getActiveSheet();
+        foreach ($activeSheet->getRowIterator() as $row) {
+            if (($r = $row->getRowIndex()) == 1) continue;
+            if ($activeSheet->getCell('D'.$r)->getValue() == $staff) {
+                $data = array(
+                    'pos'  => $activeSheet->getCell('C'.$r)->getValue(),
+                    'name' => $activeSheet->getCell('D'.$r)->getValue(),
+                    'tel'  => $activeSheet->getCell('G'.$r)->getValue(),
+                    'mob'  => $activeSheet->getCell('I'.$r)->getValue()
+                );
+            }
+        }
+        if (! isset($data['name'])) exit('Nothing Found!');
+        $this->parser->parse('staff', $data);
     }
 }
