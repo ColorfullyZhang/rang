@@ -7,7 +7,8 @@ class Excel extends CI_Controller {
     public function __construct() {
         parent::__construct();
 
-        $file = DATAPATH.'Africa_test.xlsm';
+        $file = DATAPATH.'Africa_data.xlsx';
+        if (! file_exists($file)) exit('Data file "'.$file.'" does not exist!');
 
         $this->load->library('PHPExcel');
 		$this->load->library('PHPExcel/PHPExcel_IOFactory');
@@ -24,7 +25,7 @@ class Excel extends CI_Controller {
             if (($r = $row->getRowIndex()) == 1) continue;
             if ($activeSheet->getCell('A'.$r)->getValue() == $landmark) {
                 $data['landmark'] = $activeSheet->getCell('A'.$r)->getValue();
-                $data['address'] = $activeSheet->getCell('C'.$r)->getValue();
+                $data['address'] = $activeSheet->getCell('B'.$r)->getValue();
             }
         }
         if (! isset($data['landmark'])) exit('Nothing Found!');
@@ -110,10 +111,11 @@ class Excel extends CI_Controller {
             if (($r = $row->getRowIndex()) == 1) continue;
             if ($activeSheet->getCell('D'.$r)->getValue() == $staff) {
                 $data = array(
-                    'pos'  => $activeSheet->getCell('C'.$r)->getValue(),
-                    'name' => $activeSheet->getCell('D'.$r)->getValue(),
-                    'tel'  => $activeSheet->getCell('G'.$r)->getValue(),
-                    'mob'  => $activeSheet->getCell('I'.$r)->getValue()
+                    'pos'   => $activeSheet->getCell('C'.$r)->getValue(),
+                    'name'  => $activeSheet->getCell('D'.$r)->getValue(),
+                    'tel'   => $activeSheet->getCell('G'.$r)->getValue(),
+                    'mob'   => $activeSheet->getCell('I'.$r)->getValue(),
+                    'email' => $activeSheet->getCell('J'.$r)->getValue()
                 );
             }
         }

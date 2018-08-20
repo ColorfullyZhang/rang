@@ -1,3 +1,3 @@
 {landmark}: {address}
 {companies}
-{name}: {address}{/companies}
+[企业]{name}: {address}{/companies}
