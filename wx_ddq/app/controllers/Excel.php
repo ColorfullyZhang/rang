@@ -9,6 +9,8 @@ class Excel extends CI_Controller {
 
         $file = DATAPATH.'Africa_data.xlsx';
         if (! file_exists($file)) exit('Data file "'.$file.'" does not exist!');
+        //$this->output->cache(4320); //cache 3 days
+        //$this->output->delete_cache(); //cache 3 days
 
         $this->load->library('PHPExcel');
 		$this->load->library('PHPExcel/PHPExcel_IOFactory');
@@ -65,6 +67,7 @@ class Excel extends CI_Controller {
 
     public function Quote($dest = NULL, $shipOwner = NULL, $sortCTN = '20G') {
         if (is_null($dest)) exit('Destination needed!');
+        $dest = strtolower(trim($dest));
         $this->excel->setActiveSheetIndexByName('Pricelist');
 
         $header = $this->excel->getActiveSheet()->rangeToArray(
@@ -92,14 +95,16 @@ class Excel extends CI_Controller {
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell($cDest.$r)->getValue() <> 'COTONOU') continue;
-            $sort[] = $activeSheet->getCell($cPrice.$r)->getValue() +
-                $activeSheet->getCell($cEBS.$r)->getValue() +
-                $activeSheet->getCell($cAMSENS.$r)->getValue();
-            $data[] = $activeSheet->getCell($cQuotation.$r)->getValue();
+            if (strtolower(trim($activeSheet->getCell($cDest.$r)->getValue())) <> $dest) continue;
+            $sort[] = intval($activeSheet->getCell($cPrice.$r)->getValue()) +
+                intval($activeSheet->getCell($cEBS.$r)->getValue()) +
+                intval($activeSheet->getCell($cAMSENS.$r)->getValue());
+            $data['quotations'][] = array(
+                'quotation' => $activeSheet->getCell($cQuotation.$r)->getValue()
+            );
         }
-        array_multisort($sort, $data);
-        print_r($data);
+        array_multisort($sort, $data['quotations']);
+        $this->parser->parse('quote', $data);
     }
 
     public function Staff($staff = NULL) {
