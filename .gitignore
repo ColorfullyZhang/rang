@@ -1,13 +1,4 @@
-/过期文件
-/原始文件
-/客服部询价跟踪记录表-张冬生.xlsx
-/其他文件
-/实时动态.txt
-/分工.jpg
-/Shanghai.psd
 /~$*
-/others
-/git
 /wx_ddq/ci/.htaccess
 /wx_ddq/app/.htaccess
 
@@ -18,5 +9,4 @@
 !/wx_ddq/app/logs/index.html
 
 !/wx_ddq/app/*/.htaccess
-/wx_ddq/data/Africa_data.xlsx
-/wx_ddq/data/Africa_data.xlsx
+/wx_ddq/data/*

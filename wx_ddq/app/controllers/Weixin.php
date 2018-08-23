@@ -30,6 +30,191 @@ class Weixin extends CI_Controller {
     }
 
     public function index() {
-        echo $this->input->get('echostr');
+        $xml ='<xml>
+    <ToUserName><![CDATA[gh_cc1ddf4ad0a8]]></ToUserName>
+    <FromUserName><![CDATA[oF0375z4Wfe-hlCC-IzqwvNHte_8]]></FromUserName>
+    <CreateTime>1534980867</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[Hello World!]]></Content>
+    <MsgId>6592692624189539753</MsgId>
+</xml>';
+        $msg = new WeixinMessage(FALSE);
+        $msg->loadMessage($xml);
+        $msg->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
+        $msg->setResponseMessage(array('content' => 'Contratulations, received <'.$msg->getTEXTContent().'>'));
+        $msg->sendResponse();
+    }
+}
+
+class WeixinMessage {
+    const MSGTYPE_EVENT      = 'event';
+    const MSGTYPE_IMAGE      = 'image';
+    const MSGTYPE_LINK       = 'link';
+    const MSGTYPE_LOCATION   = 'location';
+    const MSGTYPE_MUSIC      = 'music';
+    const MSGTYPE_NEWS       = 'news';
+    const MSGTYPE_SHORTVIDEO = 'shortvideo';
+    const MSGTYPE_TEXT       = 'text';
+    const MSGTYPE_VIDEO      = 'video';
+    const MSGTYPE_VOICE      = 'voice';
+
+    const EVENT_CLICK       = 'click';
+    const EVENT_LOCATION    = 'location';
+    const EVENT_SCAN        = 'scan';
+    const EVENT_SUBSCRIBE   = 'subscribe';
+    const EVENT_UNSUBSCRIBE = 'unsubscribe';
+    const EVENT_VIEW        = 'view';
+
+    private $toUserName;
+    private $fromUserName;
+    private $createTime;
+    private $msgType;
+    private $message         = array();
+    private $responseMessage = array();
+
+    //目前只支持文字回复
+    private static $responseMsgTypes = array(
+      /*self::MSGTYPE_IMAGE,
+        self::MSGTYPE_MUSIC,
+        self::MSGTYPE_NEWS,
+        self::MSGTYPE_VIDEO,
+        self::MSGTYPE_VOICE,*/
+        self::MSGTYPE_TEXT
+    );
+    private $responseMsgType = self::MSGTYPE_TEXT;
+
+    public function __construct($loadMessage = TRUE) {
+        if ($loadMessage) {
+            $this->loadMessage();
+        }
+    }
+   
+    public function loadMessage($xml = NULL) {
+        libxml_disable_entity_loader(TRUE);
+        if (is_null($xml)) {
+            $xml = file_get_contents('php://input');
+        }
+
+        $dom = new DOMDocument();
+        $dom->loadXML($xml);
+        $this->toUserName   = $dom->getElementsByTagName('ToUserName')->item(0)->nodeValue;
+        $this->fromUserName = $dom->getElementsByTagName('FromUserName')->item(0)->nodeValue;
+        $this->createTime   = $dom->getElementsByTagName('CreateTime')->item(0)->nodeValue;
+        $this->msgType      = $dom->getElementsByTagName('MsgType')->item(0)->nodeValue;
+
+        switch ($this->msgType) {
+        case self::MSGTYPE_TEXT:
+            $this->message = array(
+                'content' => $dom->getElementsByTagName('Content')->item(0)->nodeValue,
+                'msgId'   => $dom->getElementsByTagName('MsgId')->item(0)->nodeValue
+            );
+            break;
+        case self::MSGTYPE_EVENT:
+            $this->message['event'] = $dom->getElementsByTagName('Event')->item(0)->nodeValue;
+            switch ($this->message['event']) {
+            case self::EVENT_SUBSCRIBE:
+                break;
+            case self::EVENT_CLICK:
+                $this->message['eventKey'] = $dom->getElementsByTagName('EventKey')->item(0)->nodeValue;
+                break;
+            default:
+                $this->supportMsg = FALSE;
+                log_message('info', 'Unsupported Event: '.$this->message['event'].', from '.$this->fromUserName);
+            }
+        default:
+            $this->supportMsg = FALSE;
+            log_message('info', 'Unsupported MsgType: '.$this->msgType.', from '.$this->fromUserName);
+        }
+
+        return $this;
+    }
+
+    public function setResponseMsgType($msgType = self::MSGTYPE_TEXT) {
+        if (! in_array($msgType, self::$responseMsgTypes)) return FALSE;
+
+        $this->responseMsgType = $msgType;
+        return TRUE;
+    }
+
+    public function setResponseMessage($message = array()) {
+        switch ($this->responseMsgType) {
+        case self::MSGTYPE_TEXT:
+            if (is_array($message) && isset($message['content'])) {
+                $this->responseMessage = $message;
+                return TRUE;
+            } else {
+                log_message('error', 'Data in $message does not match responseMsgType!');
+                return FALSE;
+            }
+        case self::MSGTYPE_IMAGE:
+        case self::MSGTYPE_VOICE:
+        case self::MSGTYPE_VIDEO:
+        case self::MSGTYPE_MUSIC:
+        case self::MSGTYPE_NEWS:
+            return FALSE;
+        }
+    }
+    
+    public function sendResponse($message = array()) {
+        if (is_array($message) && (count($message) > 0)) {
+            if (!$this->setResponseMessage($message)) {
+                echo 'success';
+                return;
+            }
+        }
+        
+        $dom = new DOMDocument();
+        $e   = $dom->createElement('xml');
+        $e->appendChild($dom->createElement('ToUserName'))
+          ->appendChild($dom->createCDATASection($this->fromUserName));
+        $e->appendChild($dom->createElement('FromUserName'))
+          ->appendChild($dom->createCDATASection($this->toUserName));
+        $e->appendChild($dom->createElement('CreateTime'))
+          ->appendChild($dom->createTextNode($this->createTime));
+        
+        switch ($this->responseMsgType) {
+        case self::MSGTYPE_TEXT:
+            $e->appendChild($dom->createElement('MsgType'))
+              ->appendChild($dom->createCDATASection(self::MSGTYPE_TEXT));
+            $e->appendChild($dom->createElement('Content'))
+              ->appendChild($dom->createCDATASection($this->responseMessage['content']));
+            break;
+        case self::MSGTYPE_IMAGE:
+        case self::MSGTYPE_VOICE:
+        case self::MSGTYPE_VIDEO:
+        case self::MSGTYPE_MUSIC:
+        case self::MSGTYPE_NEWS:
+            log_message('info', 'Unsupported response MsgType: '.$this->responseMsgType);
+            echo 'success';
+            return;
+        }
+        $dom->appendChild($e);
+        echo $dom->saveXML();
+        return;
+    }
+   
+    public function getMsgType() {
+        return $this->msgType;
+    }
+   
+    public function getToUserName() {
+        return $this->toUserName;
+    }
+   
+    public function getFromUserName() {
+        return $this->fromUserName;
+    }
+       
+    public function getCreateTime() {
+        return $this->createTime;
+    }
+    
+    public function getTEXTContent() {
+        if ($this->getMsgType() == self::MSGTYPE_TEXT) {
+            return $this->message['content'];
+        } else {
+            log_message('Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
+            return FALSE;
+        }
     }
 }
