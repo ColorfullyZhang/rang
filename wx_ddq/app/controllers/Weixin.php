@@ -1,5 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+include DATAPATH.'message.php';
 
 class Weixin extends CI_Controller {
     private $appID = 'wxfc4ad89f36beb189';
@@ -30,18 +31,10 @@ class Weixin extends CI_Controller {
     }
 
     public function index() {
-        $xml ='<xml>
-    <ToUserName><![CDATA[gh_cc1ddf4ad0a8]]></ToUserName>
-    <FromUserName><![CDATA[oF0375z4Wfe-hlCC-IzqwvNHte_8]]></FromUserName>
-    <CreateTime>1534980867</CreateTime>
-    <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[Hello World!]]></Content>
-    <MsgId>6592692624189539753</MsgId>
-</xml>';
         $msg = new WeixinMessage(FALSE);
-        $msg->loadMessage($xml);
+        $msg->loadMessage(AAA::$xml16);
         $msg->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
-        $msg->setResponseMessage(array('content' => 'Contratulations, received <'.$msg->getTEXTContent().'>'));
+        $msg->setResponseMessage(array('content' => 'Contratulations!'));
         $msg->sendResponse();
     }
 }
@@ -104,26 +97,29 @@ class WeixinMessage {
 
         switch ($this->msgType) {
         case self::MSGTYPE_TEXT:
+            log_message('info', 'Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
                 'content' => $dom->getElementsByTagName('Content')->item(0)->nodeValue,
                 'msgId'   => $dom->getElementsByTagName('MsgId')->item(0)->nodeValue
             );
             break;
         case self::MSGTYPE_EVENT:
+            log_message('info', 'Message type: '.self::MSGTYPE_EVENT.' received');
             $this->message['event'] = $dom->getElementsByTagName('Event')->item(0)->nodeValue;
             switch ($this->message['event']) {
             case self::EVENT_SUBSCRIBE:
+                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
                 break;
             case self::EVENT_CLICK:
                 $this->message['eventKey'] = $dom->getElementsByTagName('EventKey')->item(0)->nodeValue;
+                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
                 break;
             default:
-                $this->supportMsg = FALSE;
-                log_message('info', 'Unsupported Event: '.$this->message['event'].', from '.$this->fromUserName);
+                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
             }
+            break;
         default:
-            $this->supportMsg = FALSE;
-            log_message('info', 'Unsupported MsgType: '.$this->msgType.', from '.$this->fromUserName);
+            log_message('info', 'Currently unsupported message type: '.$this->msgType.' received');
         }
 
         return $this;
@@ -156,11 +152,18 @@ class WeixinMessage {
     }
     
     public function sendResponse($message = array()) {
-        if (is_array($message) && (count($message) > 0)) {
-            if (!$this->setResponseMessage($message)) {
-                echo 'success';
-                return;
-            }
+        if (! is_array($message)) {
+            log_message('error', 'Invalid response Message!');
+            echo 'success';
+            return;
+        }
+        switch ($this->msgType) {
+        case self::MSGTYPE_TEXT:
+            break;
+        case self::MSGTYPE_EVENT:
+        default:
+            echo 'success';
+            return;
         }
         
         $dom = new DOMDocument();
@@ -184,7 +187,6 @@ class WeixinMessage {
         case self::MSGTYPE_VIDEO:
         case self::MSGTYPE_MUSIC:
         case self::MSGTYPE_NEWS:
-            log_message('info', 'Unsupported response MsgType: '.$this->responseMsgType);
             echo 'success';
             return;
         }
@@ -213,7 +215,7 @@ class WeixinMessage {
         if ($this->getMsgType() == self::MSGTYPE_TEXT) {
             return $this->message['content'];
         } else {
-            log_message('Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
+            log_message('info', 'Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
             return FALSE;
         }
     }
