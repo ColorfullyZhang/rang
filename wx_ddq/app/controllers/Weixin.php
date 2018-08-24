@@ -22,20 +22,42 @@ class Weixin extends CI_Controller {
                      $this->input->get('nonce'));
         sort($arr, SORT_STRING);
         if (sha1(implode($arr)) == $this->input->get('signature')) {
-            log_message('info', '>>> Weixin::checkSignature() logs: Check signature successful');
+            log_message('info', '>>> '.__METHOD__.'() logs: Check signature successful');
             echo $this->input->get('echostr');
         } else {
-            log_message('info', '>>> WeixincheckSignature() logs: Check signature failed.');
+            log_message('info', '>>> '.__METHOD__.'() logs: Check signature failed.');
         }
         exit;
     }
 
     public function index($index = '01') {
-        $xml = 'xml'.$index;
         $msg = new WeixinMessage(FALSE);
-        $msg->loadMessage(AAA::$$xml);
-        $msg->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
-        $msg->setResponseMessage(array('content' => 'Contratulations!'));
+        switch($index) {
+        case '01':
+            $msg->loadMessage(AAA::$xml01);
+            $msg->setResponseMessage(array('content' => 'Contratulations!'));
+            log_message('info', 'Content: '.$msg->getContent());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            break;
+        case '02':
+            $msg->loadMessage(AAA::$xml02);
+            $msg->setResponseMessage(array('content' => 'Image Received'));
+            log_message('info', 'PicUrl: '.$msg->getPicUrl());
+            log_message('info', 'MediaId: '.$msg->getMediaId());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            break;
+        case '11':
+            $msg->loadMessage(AAA::$xml11);
+            break;
+        case '16':
+            $msg->loadMessage(AAA::$xml16);
+            $msg->setResponseMessage(array('content' => $msg->getEventKey()));
+            break;
+        default:
+            echo "Unsupported xml index: {$index}";
+            return;
+            break;
+        }
         $msg->sendResponse();
     }
 }
@@ -62,17 +84,16 @@ class WeixinMessage {
     private $toUserName;
     private $fromUserName;
     private $createTime;
-    private $msgType;
+    private $msgType         = NULL;
     private $message         = array();
     private $responseMessage = array();
 
-    //目前只支持文字回复
     private static $responseMsgTypes = array(
-      /*self::MSGTYPE_IMAGE,
+        self::MSGTYPE_IMAGE,
         self::MSGTYPE_MUSIC,
         self::MSGTYPE_NEWS,
         self::MSGTYPE_VIDEO,
-        self::MSGTYPE_VOICE,*/
+        self::MSGTYPE_VOICE,
         self::MSGTYPE_TEXT
     );
     private $responseMsgType = self::MSGTYPE_TEXT;
@@ -81,6 +102,10 @@ class WeixinMessage {
         if ($loadMessage) {
             $this->loadMessage();
         }
+    }
+
+    private function domValue(&$dom, $key) {
+        return $dom->getElementsByTagName($key)->item(0)->nodeValue;
     }
    
     public function loadMessage($xml = NULL) {
@@ -94,33 +119,52 @@ class WeixinMessage {
         $this->toUserName   = $dom->getElementsByTagName('ToUserName')->item(0)->nodeValue;
         $this->fromUserName = $dom->getElementsByTagName('FromUserName')->item(0)->nodeValue;
         $this->createTime   = $dom->getElementsByTagName('CreateTime')->item(0)->nodeValue;
-        $this->msgType      = $dom->getElementsByTagName('MsgType')->item(0)->nodeValue;
+        $msgType            = $dom->getElementsByTagName('MsgType')->item(0)->nodeValue;
 
-        switch ($this->msgType) {
+        switch ($msgType) {
         case self::MSGTYPE_TEXT:
-            log_message('info', '>>> WeixinMessage::loadMessage() logs: Message type: '.self::MSGTYPE_TEXT.' received');
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
                 'content' => $dom->getElementsByTagName('Content')->item(0)->nodeValue,
                 'msgId'   => $dom->getElementsByTagName('MsgId')->item(0)->nodeValue
+            );
+            break;
+        case self::MSGTYPE_IMAGE:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_IMAGE.' received');
+            $this->message = array(
+                'picUrl'  => $this->domValue($dom, 'PicUrl'),
+                'mediaId' => $this->domValue($dom, 'MediaId'),
+                'msgId'   => $this->domValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_EVENT:
             $this->message['event'] = $dom->getElementsByTagName('Event')->item(0)->nodeValue;
             switch ($this->message['event']) {
             case self::EVENT_SUBSCRIBE:
-                // no action
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
                 break;
             case self::EVENT_CLICK:
                 $this->message['eventKey'] = $dom->getElementsByTagName('EventKey')->item(0)->nodeValue;
-                log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported Event: '.$this->message['event'].' received');
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
                 break;
             default:
-                log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported Event: '.$this->message['event'].' received');
+                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']} received");
             }
             break;
+        case self::MSGTYPE_LINK:
+        case self::MSGTYPE_LOCATION:
+        case self::MSGTYPE_MUSIC:
+        case self::MSGTYPE_NEWS:
+        case self::MSGTYPE_SHORTVIDEO:
+        case self::MSGTYPE_VIDEO:
+        case self::MSGTYPE_VOICE:
+            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$msgType} received");
+            break;
         default:
-            log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported message type: '.$this->msgType.' received');
+            $msgType = NULL;
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid message type: {$msgType} received");
         }
+        $this->msgType = $msgType;
 
         return $this;
     }
@@ -130,14 +174,14 @@ class WeixinMessage {
             $this->responseMsgType = $msgType;
             return TRUE;
         } else {
-            log_message('error', '>>> WeixinMessage::setResponseMsgType() logs: Invalid responseMsgType: '.$msgType.'!');
+            log_message('error', '>>> '.__METHOD__."() logs: Invalid responseMsgType: {$msgType}!");
             return FALSE;
         }
     }
 
     public function setResponseMessage($message = array()) {
         if (! is_array($message)) {
-            log_message('error', '>>> WeixinMessage::setResponseMessage() logs: Invalid parameter type: '.gettype($message).' received!');
+            log_message('error', '>>> '.__METHOD__.'() logs: Invalid parameter type: '.gettype($message).' received!');
             return FALSE;
         }
         if (isset($message['msgType'])) {
@@ -150,16 +194,20 @@ class WeixinMessage {
         case self::MSGTYPE_TEXT:
             if (isset($message['content'])) {
                 $this->responseMessage = $message;
-                return TRUE;
             }
             break;
         case self::MSGTYPE_IMAGE:
+            break;
         case self::MSGTYPE_VOICE:
+            break;
         case self::MSGTYPE_VIDEO:
+            break;
         case self::MSGTYPE_MUSIC:
+            break;
         case self::MSGTYPE_NEWS:
-            return FALSE;
+            break;
         }
+        return TRUE;
     }
     
     public function sendResponse($message = array()) {
@@ -168,11 +216,27 @@ class WeixinMessage {
             return;
         }
 
+        // 收到哪些信息现在还不能回复，支持一个可删除一个
         switch ($this->msgType) {
-        case self::MSGTYPE_TEXT:
-            break;
         case self::MSGTYPE_EVENT:
-        default:
+            switch ($this->message['event']) {
+            case self::EVENT_LOCATION:
+            case self::EVENT_SCAN:
+            case self::EVENT_UNSUBSCRIBE:
+            case self::EVENT_VIEW:
+                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']}");
+                echo 'success';
+                return;
+            }
+            break;
+        case self::MSGTYPE_LINK:
+        case self::MSGTYPE_LOCATION:
+        case self::MSGTYPE_MUSIC:
+        case self::MSGTYPE_NEWS:
+        case self::MSGTYPE_SHORTVIDEO:
+        case self::MSGTYPE_VIDEO:
+        case self::MSGTYPE_VOICE:
+            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->msgType}");
             echo 'success';
             return;
         }
@@ -188,21 +252,26 @@ class WeixinMessage {
         
         switch ($this->responseMsgType) {
         case self::MSGTYPE_TEXT:
+            if ($this->msgType == self::MSGTYPE_EVENT && $this->message['event'] == self::EVENT_SUBSCRIBE) {
+                $this->setResponseMessage(array('content' => 'Thank you for your follow!'));
+            } else if (! isset($this->responseMessage['content'])) {
+                log_message('info', '>>> '.__METHOD__.'() logs: "content" must be set before response text message');
+                echo 'success';
+                return;
+            }
             $e->appendChild($dom->createElement('MsgType'))
-              ->appendChild($dom->createCDATASection(self::MSGTYPE_TEXT));
+              ->appendChild($dom->createCDATASection($this->responseMsgType));
             $e->appendChild($dom->createElement('Content'))
               ->appendChild($dom->createCDATASection($this->responseMessage['content']));
             break;
-        case self::MSGTYPE_IMAGE:
-        case self::MSGTYPE_VOICE:
-        case self::MSGTYPE_VIDEO:
-        case self::MSGTYPE_MUSIC:
-        case self::MSGTYPE_NEWS:
+        default:
+            log_message('info', '>>> '.__METHOD__.'() logs: responseMsgType: '.$this->responseMsgType.' is not supported at the moment');
             echo 'success';
             return;
         }
         $dom->appendChild($e);
         echo $dom->saveXML();
+        log_message('info', '>>> '.__METHOD__.'() logs: '.$this->responseMsgType.' message responsed');
         return;
     }
    
@@ -222,12 +291,153 @@ class WeixinMessage {
         return $this->createTime;
     }
     
-    public function getTEXTContent() {
-        if ($this->getMsgType() == self::MSGTYPE_TEXT) {
-            return $this->message['content'];
-        } else {
-            log_message('info', '>>> WeixinMessage::getTEXTContent() logs: Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
+    public function getContent() {
+        if ($this->getMsgType() != self::MSGTYPE_TEXT) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
             return FALSE;
         }
+        return $this->message['content'];
+    }
+
+    public function getEvent() {
+        if ($this->getMsgType() != self::MSGTYPE_EVENT) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is not '.self::MSGTYPE_EVENT);
+            return FALSE;
+        }
+        return $this->message['event'];
+    }
+
+    public function getEventKey() {
+        $validEvents = array(self::EVENT_SUBSCRIBE, self::EVENT_SCAN, self::EVENT_CLICK, self::EVENT_VIEW);
+        if (! in_array($this->getEvent(), $validEvents)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+            return FALSE;
+        }
+        return $this->message['eventKey'];
+    }
+
+    public function getMsgId() {
+        $validMsgTypes= array( self::MSGTYPE_TEXT, self::MSGTYPE_IMAGE, self::MSGTYPE_VOICE,
+            self::MSGTYPE_VIDEO, self::MSGTYPE_SHORTVIDEO, self::MSGTYPE_LOCATION, self::MSGTYPE_LINK);
+        if (! in_array($this->getMsgType(), $validMsgTypes)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+            return FALSE;
+        }
+        return $this->message['msgId'];
+    }
+
+    public function getPicUrl() {
+        if ($this->getMsgType() != self::MSGTYPE_IMAGE) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_IMAGE);
+            return FALSE;
+        }
+        return $this->message['PicUrl'];
+    }
+
+    public function getMediaId() {
+        $validMsgTypes= array(self::MSGTYPE_IMAGE, self::MSGTYPE_VOICE,
+            self::MSGTYPE_VIDEO, self::MSGTYPE_SHORTVIDEO);
+        if (! in_array($this->getMsgType(), $validMsgTypes)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+            return FALSE;
+        }
+        return $this->message['mediaId'];
+    }
+
+    public function getFormat() {
+        if ($this->getMsgType() != self::MSGTYPE_VOICE) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_VOICE);
+            return FALSE;
+        }
+        return $this->message['format'];
+    }
+
+    public function getRecognition() {
+        log_message('error', 'Not implemented method: '.__METHOD__.'()');
+        return FALSE;
+    }
+
+    public function getThumbMediaId() {
+        $validMsgTypes= array(self::MSGTYPE_VIDEO, self::MSGTYPE_SHORTVIDEO);
+        if (! in_array($this->getMsgType(), $validMsgTypes)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+            return FALSE;
+        }
+        return $this->message['thumbMediaId'];
+    }
+
+    public function getLocationX() {
+        if ($this->getMsgType() != self::MSGTYPE_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
+            return FALSE;
+        }
+        return $this->message['location_x'];
+    }
+
+    public function getLocationY() {
+        if ($this->getMsgType() != self::MSGTYPE_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
+            return FALSE;
+        }
+        return $this->message['location_y'];
+    }
+
+    public function getScale() {
+        if ($this->getMsgType() != self::MSGTYPE_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
+            return FALSE;
+        }
+        return $this->message['scale'];
+    }
+
+    public function getLabel() {
+        if ($this->getMsgType() != self::MSGTYPE_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
+            return FALSE;
+        }
+        return $this->message['label'];
+    }
+
+    public function getDescription() {
+        if ($this->getMsgType() != self::MSGTYPE_LINK) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LINK);
+            return FALSE;
+        }
+        return $this->message['description'];
+    }
+
+    public function getTitle() {
+        if ($this->getMsgType() != self::MSGTYPE_LINK) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LINK);
+            return FALSE;
+        }
+        return $this->message['title'];
+    }
+
+    public function getUrl() {
+        if ($this->getMsgType() != self::MSGTYPE_LINK) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LINK);
+            return FALSE;
+        }
+        return $this->message['url'];
+    }
+
+    public function getTicket() {
+        $validEvents = array(self::EVENT_SUBSCRIBE, self::EVENT_SCAN);
+        if ($this->getEvent() != self:MSGTYPE_EVENT && ! in_array($this->getEvent(), $validEvents)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+            return FALSE;
+        }
+        return $this->message['thumbMediaId'];
+    }
+
+    public function getLatitude() {
+        log_message('error', 'Not implemented method: '.__METHOD__.'()');
+        return FALSE;
+    }
+
+    public function getLongitude() {
+        log_message('error', 'Not implemented method: '.__METHOD__.'()');
+        return FALSE;
     }
 }

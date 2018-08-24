@@ -91,6 +91,8 @@ public static $xml08 = '<xml>
     <MsgId>1234567890123456</MsgId>
 </xml>';
 
+
+
 //<!-- 关注事件 -->
 public static $xml11 = '<xml>
     <ToUserName><![CDATA[toUser_11]]></ToUserName>
@@ -150,7 +152,7 @@ public static $xml16 = '<xml>
     <CreateTime>123456789</CreateTime>
     <MsgType><![CDATA[event]]></MsgType>
     <Event><![CDATA[CLICK]]></Event>
-    <EventKey><![CDATA[EVENTKEY]]></EventKey>
+    <EventKey><![CDATA[keyyyyyyyyyyyyyyyyyyyyyy]]></EventKey>
 </xml>';
 
 //<!-- 点击菜单跳转链接时的事件 -->
@@ -162,6 +164,10 @@ public static $xml17 = '<xml>
     <Event><![CDATA[VIEW]]></Event>
     <EventKey><![CDATA[www.qq.com]]></EventKey>
 </xml>';
+
+
+
+
 
 //<!-- 回复文本消息 -->
 public static $xml91 = '<xml>
