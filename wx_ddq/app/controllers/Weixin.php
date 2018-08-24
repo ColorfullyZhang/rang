@@ -1,6 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
-include DATAPATH.'message.php';
+include DATAPATH.'raw/message.php';
 
 class Weixin extends CI_Controller {
     private $appID = 'wxfc4ad89f36beb189';
@@ -22,17 +22,18 @@ class Weixin extends CI_Controller {
                      $this->input->get('nonce'));
         sort($arr, SORT_STRING);
         if (sha1(implode($arr)) == $this->input->get('signature')) {
-            log_message('info', 'Check signature successful');
+            log_message('info', '>>> Weixin::checkSignature() logs: Check signature successful');
             echo $this->input->get('echostr');
         } else {
-            log_message('info', 'Check signature failed.');
+            log_message('info', '>>> WeixincheckSignature() logs: Check signature failed.');
         }
         exit;
     }
 
-    public function index() {
+    public function index($index = '01') {
+        $xml = 'xml'.$index;
         $msg = new WeixinMessage(FALSE);
-        $msg->loadMessage(AAA::$xml16);
+        $msg->loadMessage(AAA::$$xml);
         $msg->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
         $msg->setResponseMessage(array('content' => 'Contratulations!'));
         $msg->sendResponse();
@@ -97,51 +98,61 @@ class WeixinMessage {
 
         switch ($this->msgType) {
         case self::MSGTYPE_TEXT:
-            log_message('info', 'Message type: '.self::MSGTYPE_TEXT.' received');
+            log_message('info', '>>> WeixinMessage::loadMessage() logs: Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
                 'content' => $dom->getElementsByTagName('Content')->item(0)->nodeValue,
                 'msgId'   => $dom->getElementsByTagName('MsgId')->item(0)->nodeValue
             );
             break;
         case self::MSGTYPE_EVENT:
-            log_message('info', 'Message type: '.self::MSGTYPE_EVENT.' received');
             $this->message['event'] = $dom->getElementsByTagName('Event')->item(0)->nodeValue;
             switch ($this->message['event']) {
             case self::EVENT_SUBSCRIBE:
-                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
+                // no action
                 break;
             case self::EVENT_CLICK:
                 $this->message['eventKey'] = $dom->getElementsByTagName('EventKey')->item(0)->nodeValue;
-                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
+                log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported Event: '.$this->message['event'].' received');
                 break;
             default:
-                log_message('info', 'Currently unsupported Event: '.$this->message['event'].' received');
+                log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported Event: '.$this->message['event'].' received');
             }
             break;
         default:
-            log_message('info', 'Currently unsupported message type: '.$this->msgType.' received');
+            log_message('info', '>>> WeixinMessage::loadMessage() logs: Currently unsupported message type: '.$this->msgType.' received');
         }
 
         return $this;
     }
 
     public function setResponseMsgType($msgType = self::MSGTYPE_TEXT) {
-        if (! in_array($msgType, self::$responseMsgTypes)) return FALSE;
-
-        $this->responseMsgType = $msgType;
-        return TRUE;
+        if (in_array($msgType, self::$responseMsgTypes)) {
+            $this->responseMsgType = $msgType;
+            return TRUE;
+        } else {
+            log_message('error', '>>> WeixinMessage::setResponseMsgType() logs: Invalid responseMsgType: '.$msgType.'!');
+            return FALSE;
+        }
     }
 
     public function setResponseMessage($message = array()) {
-        switch ($this->responseMsgType) {
-        case self::MSGTYPE_TEXT:
-            if (is_array($message) && isset($message['content'])) {
-                $this->responseMessage = $message;
-                return TRUE;
-            } else {
-                log_message('error', 'Data in $message does not match responseMsgType!');
+        if (! is_array($message)) {
+            log_message('error', '>>> WeixinMessage::setResponseMessage() logs: Invalid parameter type: '.gettype($message).' received!');
+            return FALSE;
+        }
+        if (isset($message['msgType'])) {
+            if (! $this->setResponseMsgType($message['msgType'])) {
                 return FALSE;
             }
+            unset($message['msgType']);
+        }
+        switch ($this->responseMsgType) {
+        case self::MSGTYPE_TEXT:
+            if (isset($message['content'])) {
+                $this->responseMessage = $message;
+                return TRUE;
+            }
+            break;
         case self::MSGTYPE_IMAGE:
         case self::MSGTYPE_VOICE:
         case self::MSGTYPE_VIDEO:
@@ -152,11 +163,11 @@ class WeixinMessage {
     }
     
     public function sendResponse($message = array()) {
-        if (! is_array($message)) {
-            log_message('error', 'Invalid response Message!');
+        if (! $this->setResponseMessage($message)) {
             echo 'success';
             return;
         }
+
         switch ($this->msgType) {
         case self::MSGTYPE_TEXT:
             break;
@@ -215,7 +226,7 @@ class WeixinMessage {
         if ($this->getMsgType() == self::MSGTYPE_TEXT) {
             return $this->message['content'];
         } else {
-            log_message('info', 'Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
+            log_message('info', '>>> WeixinMessage::getTEXTContent() logs: Cannot call WeixinMessage::getTEXTContent() without TEXT message!');
             return FALSE;
         }
     }
