@@ -1,4 +1,5 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 /** PHPExcel root directory */
 if (!defined('PHPEXCEL_ROOT')) {

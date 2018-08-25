@@ -1,125 +1,5 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
-include DATAPATH.'raw/message.php';
-
-class Weixin extends CI_Controller {
-    private $appID = 'wxfc4ad89f36beb189';
-    private $appSecret = '8de181c7b52dccd13087adb97b9620f0';
-    private $encodingAESKey = 'saFkURTUS05TFJti201a3L5HI3c897jm4qXNhYD9i3W';
-    private $token = 'ddqddz';
-    
-    public function __construct() {
-        parent::__construct();
-
-        if ($this->input->get('signature') !== NULL) {
-            $this->checkSignature();
-        }
-    }
-
-    private function checkSignature() {
-        $arr = array($this->token,
-                     $this->input->get('timestamp'),
-                     $this->input->get('nonce'));
-        sort($arr, SORT_STRING);
-        if (sha1(implode($arr)) == $this->input->get('signature')) {
-            log_message('info', '>>> '.__METHOD__.'() logs: Check signature successful');
-            echo $this->input->get('echostr');
-        } else {
-            log_message('info', '>>> '.__METHOD__.'() logs: Check signature failed.');
-        }
-        exit;
-    }
-
-    public function index($index = '01') {
-        $msg = new WeixinMessage(FALSE);
-        switch($index) {
-        case '01':
-            $msg->loadMessage(AAA::$xml01);
-            log_message('info', 'Content: '.$msg->getContent());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Contratulations!'));
-            break;
-        case '02':
-            $msg->loadMessage(AAA::$xml02);
-            log_message('info', 'PicUrl: '.$msg->getPicUrl());
-            log_message('info', 'MediaId: '.$msg->getMediaId());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Image Received'));
-            break;
-        case '03':
-            $msg->loadMessage(AAA::$xml03);
-            log_message('info', 'Format: '.$msg->getFormat());
-            log_message('info', 'MediaId: '.$msg->getMediaId());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Voice Received'));
-            break;
-        case '05':
-            $msg->loadMessage(AAA::$xml05);
-            log_message('info', 'ThumbMediaId: '.$msg->getThumbMediaId());
-            log_message('info', 'MediaId: '.$msg->getMediaId());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Video Received'));
-            break;
-        case '06':
-            $msg->loadMessage(AAA::$xml06);
-            log_message('info', 'ThumbMediaId: '.$msg->getThumbMediaId());
-            log_message('info', 'MediaId: '.$msg->getMediaId());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Shortvideo Received'));
-            break;
-        case '07':
-            $msg->loadMessage(AAA::$xml07);
-            log_message('info', 'Location_X: '.$msg->getLocationX());
-            log_message('info', 'Location_Y: '.$msg->getLocationY());
-            log_message('info', 'Scale: '.$msg->getScale());
-            log_message('info', 'Label: '.$msg->getLabel());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Location Received'));
-            break;
-        case '08':
-            $msg->loadMessage(AAA::$xml08);
-            log_message('info', 'Title: '.$msg->getTitle());
-            log_message('info', 'Description: '.$msg->getDescription());
-            log_message('info', 'Url: '.$msg->getUrl());
-            log_message('info', 'MsgId: '.$msg->getMsgId());
-            $msg->setResponseMessage(array('content' => 'Link Received'));
-            break;
-        case '11':
-            $msg->loadMessage(AAA::$xml11);
-            break;
-        case '12':
-            $msg->loadMessage(AAA::$xml12);
-            log_message('info', 'Unsubscribed userName: '.$msg->getFromUserName());
-            $msg->setResponseMessage();
-            break;
-        case '13':
-            $msg->loadMessage(AAA::$xml13);
-            $msg->setResponseMessage();
-            break;
-        case '14':
-            $msg->loadMessage(AAA::$xml14);
-            $msg->setResponseMessage();
-            break;
-        case '15':
-            $msg->loadMessage(AAA::$xml15);
-            $msg->setResponseMessage();
-            break;
-        case '16':
-            $msg->loadMessage(AAA::$xml16);
-            $msg->setResponseMessage(array('content' => $msg->getEventKey()));
-            break;
-        case '17':
-            $msg->loadMessage(AAA::$xml17);
-            $msg->setResponseMessage(array('content' => $msg->getEventKey()));
-            break;
-        default:
-            echo "Unsupported xml index: {$index}";
-            return;
-            break;
-        }
-        $msg->sendResponse();
-    }
-}
 
 class WeixinMessage {
     const MSGTYPE_EVENT      = 'event';
@@ -284,6 +164,13 @@ class WeixinMessage {
     }
 
     public function setResponseMessage($message = array()) {
+        if (is_string($message)) {
+            $message = array(
+                'msgType' => self::MSGTYPE_TEXT,
+                'content' => $message
+            );
+        }
+
         if (! is_array($message)) {
             log_message('error', '>>> '.__METHOD__.'() logs: Invalid parameter type: '.gettype($message).' received!');
             return FALSE;
@@ -313,16 +200,15 @@ class WeixinMessage {
         }
         return TRUE;
     }
-    
-    public function sendResponse($message = array()) {
+
+    // 返回要发给微信服务器的信息
+    public function getResponse($message) {
         if ($this->msgType == self::MSGTYPE_EVENT && $this->getEvent() == self::EVENT_UNSUBSCRIBE) {
             log_message('info', '>>> '.__METHOD__.'() logs: "success" responsed');
-            echo 'success';
-            return;
+            $this->responseSuccess();
         }
         if (! $this->setResponseMessage($message)) {
-            echo 'success';
-            return;
+            $this->responseSuccess();
         }
 
         // 收到哪些信息现在还不能回复，支持一个可删除一个
@@ -332,8 +218,7 @@ class WeixinMessage {
             case self::EVENT_LOCATION:
             case self::EVENT_SCAN:
                 log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']}");
-                echo 'success';
-                return;
+                $this->responseSuccess();
             }
             break;
         case self::MSGTYPE_LINK:
@@ -345,8 +230,7 @@ class WeixinMessage {
         case self::MSGTYPE_VOICE:
         case self::MSGTYPE_IMAGE:
             log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->msgType}");
-            echo 'success';
-            return;
+            $this->responseSuccess();
         }
         
         $dom = new DOMDocument();
@@ -364,8 +248,7 @@ class WeixinMessage {
                 $this->setResponseMessage(array('content' => 'Thank you for your follow!'));
             } else if (! isset($this->responseMessage['content'])) {
                 log_message('info', '>>> '.__METHOD__.'() logs: "content" must be set before response text message');
-                echo 'success';
-                return;
+                $this->responseSuccess();
             }
             $e->appendChild($dom->createElement('MsgType'))
               ->appendChild($dom->createCDATASection($this->responseMsgType));
@@ -374,13 +257,11 @@ class WeixinMessage {
             break;
         default:
             log_message('info', '>>> '.__METHOD__.'() logs: responseMsgType: '.$this->responseMsgType.' is not supported at the moment');
-            echo 'success';
-            return;
+            $this->responseSuccess();
         }
         $dom->appendChild($e);
-        echo $dom->saveXML();
         log_message('info', '>>> '.__METHOD__.'() logs: '.$this->responseMsgType.' message responsed');
-        return;
+        return $dom->saveXML();
     }
    
     public function getMsgType() {
@@ -561,5 +442,12 @@ class WeixinMessage {
             return FALSE;
         }
         return $this->message['precision'];
+    }
+    
+    // 当收到还不支持的信息时，只返回接收确认给微信服务器，对用户不予理会
+    public function responseSuccess() {
+        log_message('info', '>>> "success" sent to Weixin server');
+        echo 'success';
+        exit;
     }
 }
