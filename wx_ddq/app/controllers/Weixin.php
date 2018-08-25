@@ -35,22 +35,81 @@ class Weixin extends CI_Controller {
         switch($index) {
         case '01':
             $msg->loadMessage(AAA::$xml01);
-            $msg->setResponseMessage(array('content' => 'Contratulations!'));
             log_message('info', 'Content: '.$msg->getContent());
             log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Contratulations!'));
             break;
         case '02':
             $msg->loadMessage(AAA::$xml02);
-            $msg->setResponseMessage(array('content' => 'Image Received'));
             log_message('info', 'PicUrl: '.$msg->getPicUrl());
             log_message('info', 'MediaId: '.$msg->getMediaId());
             log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Image Received'));
+            break;
+        case '03':
+            $msg->loadMessage(AAA::$xml03);
+            log_message('info', 'Format: '.$msg->getFormat());
+            log_message('info', 'MediaId: '.$msg->getMediaId());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Voice Received'));
+            break;
+        case '05':
+            $msg->loadMessage(AAA::$xml05);
+            log_message('info', 'ThumbMediaId: '.$msg->getThumbMediaId());
+            log_message('info', 'MediaId: '.$msg->getMediaId());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Video Received'));
+            break;
+        case '06':
+            $msg->loadMessage(AAA::$xml06);
+            log_message('info', 'ThumbMediaId: '.$msg->getThumbMediaId());
+            log_message('info', 'MediaId: '.$msg->getMediaId());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Shortvideo Received'));
+            break;
+        case '07':
+            $msg->loadMessage(AAA::$xml07);
+            log_message('info', 'Location_X: '.$msg->getLocationX());
+            log_message('info', 'Location_Y: '.$msg->getLocationY());
+            log_message('info', 'Scale: '.$msg->getScale());
+            log_message('info', 'Label: '.$msg->getLabel());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Location Received'));
+            break;
+        case '08':
+            $msg->loadMessage(AAA::$xml08);
+            log_message('info', 'Title: '.$msg->getTitle());
+            log_message('info', 'Description: '.$msg->getDescription());
+            log_message('info', 'Url: '.$msg->getUrl());
+            log_message('info', 'MsgId: '.$msg->getMsgId());
+            $msg->setResponseMessage(array('content' => 'Link Received'));
             break;
         case '11':
             $msg->loadMessage(AAA::$xml11);
             break;
+        case '12':
+            $msg->loadMessage(AAA::$xml12);
+            log_message('info', 'Unsubscribed userName: '.$msg->getFromUserName());
+            $msg->setResponseMessage();
+            break;
+        case '13':
+            $msg->loadMessage(AAA::$xml13);
+            $msg->setResponseMessage();
+            break;
+        case '14':
+            $msg->loadMessage(AAA::$xml14);
+            $msg->setResponseMessage();
+            break;
+        case '15':
+            $msg->loadMessage(AAA::$xml15);
+            $msg->setResponseMessage();
+            break;
         case '16':
             $msg->loadMessage(AAA::$xml16);
+            $msg->setResponseMessage(array('content' => $msg->getEventKey()));
+            break;
+        case '17':
+            $msg->loadMessage(AAA::$xml17);
             $msg->setResponseMessage(array('content' => $msg->getEventKey()));
             break;
         default:
@@ -116,17 +175,17 @@ class WeixinMessage {
 
         $dom = new DOMDocument();
         $dom->loadXML($xml);
-        $this->toUserName   = $dom->getElementsByTagName('ToUserName')->item(0)->nodeValue;
-        $this->fromUserName = $dom->getElementsByTagName('FromUserName')->item(0)->nodeValue;
-        $this->createTime   = $dom->getElementsByTagName('CreateTime')->item(0)->nodeValue;
-        $msgType            = $dom->getElementsByTagName('MsgType')->item(0)->nodeValue;
+        $this->toUserName   = $this->domValue($dom, 'ToUserName');
+        $this->fromUserName = $this->domValue($dom, 'FromUserName');
+        $this->createTime   = $this->domValue($dom, 'CreateTime');
+        $msgType            = $this->domValue($dom, 'MsgType');
 
         switch ($msgType) {
         case self::MSGTYPE_TEXT:
             log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
-                'content' => $dom->getElementsByTagName('Content')->item(0)->nodeValue,
-                'msgId'   => $dom->getElementsByTagName('MsgId')->item(0)->nodeValue
+                'content' => $this->domValue($dom, 'Content'),
+                'msgId'   => $this->domValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_IMAGE:
@@ -137,27 +196,72 @@ class WeixinMessage {
                 'msgId'   => $this->domValue($dom, 'MsgId')
             );
             break;
+        case self::MSGTYPE_VOICE:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_VOICE.' received');
+            $this->message = array(
+                'format'  => $this->domValue($dom, 'Format'),
+                'mediaId' => $this->domValue($dom, 'MediaId'),
+                'msgId'   => $this->domValue($dom, 'MsgId')
+            );
+            break;
+        case self::MSGTYPE_VIDEO:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_VIDEO.' received');
+            $this->message = array(
+                'thumbMediaId'  => $this->domValue($dom, 'ThumbMediaId'),
+                'mediaId'       => $this->domValue($dom, 'MediaId'),
+                'msgId'         => $this->domValue($dom, 'MsgId')
+            );
+            break;
+        case self::MSGTYPE_SHORTVIDEO:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_SHORTVIDEO.' received');
+            $this->message = array(
+                'thumbMediaId'  => $this->domValue($dom, 'ThumbMediaId'),
+                'mediaId'       => $this->domValue($dom, 'MediaId'),
+                'msgId'         => $this->domValue($dom, 'MsgId')
+            );
+            break;
+        case self::MSGTYPE_LOCATION:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_LOCATION.' received');
+            $this->message = array(
+                'locationX' => $this->domValue($dom, 'Location_X'),
+                'locationY' => $this->domValue($dom, 'Location_Y'),
+                'scale'     => $this->domValue($dom, 'Scale'),
+                'label'     => $this->domValue($dom, 'Label'),
+                'msgId'     => $this->domValue($dom, 'MsgId')
+            );
+            break;
+        case self::MSGTYPE_LINK:
+            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_LINK.' received');
+            $this->message = array(
+                'title'       => $this->domValue($dom, 'Title'),
+                'description' => $this->domValue($dom, 'Description'),
+                'url'         => $this->domValue($dom, 'Url'),
+                'msgId'       => $this->domValue($dom, 'MsgId')
+            );
+            break;
         case self::MSGTYPE_EVENT:
-            $this->message['event'] = $dom->getElementsByTagName('Event')->item(0)->nodeValue;
+            $this->message['event'] = strtolower($this->domValue($dom, 'Event'));
             switch ($this->message['event']) {
             case self::EVENT_SUBSCRIBE:
                 log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
                 break;
             case self::EVENT_CLICK:
-                $this->message['eventKey'] = $dom->getElementsByTagName('EventKey')->item(0)->nodeValue;
+                $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                break;
+            case self::EVENT_UNSUBSCRIBE:
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                break;
+            case self::EVENT_VIEW:
+                $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
                 log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
                 break;
             default:
                 log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']} received");
             }
             break;
-        case self::MSGTYPE_LINK:
-        case self::MSGTYPE_LOCATION:
         case self::MSGTYPE_MUSIC:
         case self::MSGTYPE_NEWS:
-        case self::MSGTYPE_SHORTVIDEO:
-        case self::MSGTYPE_VIDEO:
-        case self::MSGTYPE_VOICE:
             log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$msgType} received");
             break;
         default:
@@ -211,6 +315,11 @@ class WeixinMessage {
     }
     
     public function sendResponse($message = array()) {
+        if ($this->msgType == self::MSGTYPE_EVENT && $this->getEvent() == self::EVENT_UNSUBSCRIBE) {
+            log_message('info', '>>> '.__METHOD__.'() logs: "success" responsed');
+            echo 'success';
+            return;
+        }
         if (! $this->setResponseMessage($message)) {
             echo 'success';
             return;
@@ -219,11 +328,9 @@ class WeixinMessage {
         // 收到哪些信息现在还不能回复，支持一个可删除一个
         switch ($this->msgType) {
         case self::MSGTYPE_EVENT:
-            switch ($this->message['event']) {
+            switch ($this->getEvent()) {
             case self::EVENT_LOCATION:
             case self::EVENT_SCAN:
-            case self::EVENT_UNSUBSCRIBE:
-            case self::EVENT_VIEW:
                 log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']}");
                 echo 'success';
                 return;
@@ -236,6 +343,7 @@ class WeixinMessage {
         case self::MSGTYPE_SHORTVIDEO:
         case self::MSGTYPE_VIDEO:
         case self::MSGTYPE_VOICE:
+        case self::MSGTYPE_IMAGE:
             log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->msgType}");
             echo 'success';
             return;
@@ -331,7 +439,7 @@ class WeixinMessage {
             log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_IMAGE);
             return FALSE;
         }
-        return $this->message['PicUrl'];
+        return $this->message['picUrl'];
     }
 
     public function getMediaId() {
@@ -371,7 +479,7 @@ class WeixinMessage {
             log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
             return FALSE;
         }
-        return $this->message['location_x'];
+        return $this->message['locationX'];
     }
 
     public function getLocationY() {
@@ -379,7 +487,7 @@ class WeixinMessage {
             log_message('info', '>>> '.__METHOD__.'() logs: Method can only be called when message type is '.self::MSGTYPE_LOCATION);
             return FALSE;
         }
-        return $this->message['location_y'];
+        return $this->message['locationY'];
     }
 
     public function getScale() {
@@ -424,20 +532,34 @@ class WeixinMessage {
 
     public function getTicket() {
         $validEvents = array(self::EVENT_SUBSCRIBE, self::EVENT_SCAN);
-        if ($this->getEvent() != self:MSGTYPE_EVENT && ! in_array($this->getEvent(), $validEvents)) {
-            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is '.$this->getMsgType());
+        if ($this->getMsgType() != self::MSGTYPE_EVENT OR ! in_array($this->getEvent(), $validEvents)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method only available within Event:subscribe and Event:scan');
             return FALSE;
         }
-        return $this->message['thumbMediaId'];
+        return $this->message['ticket'];
     }
 
     public function getLatitude() {
-        log_message('error', 'Not implemented method: '.__METHOD__.'()');
-        return FALSE;
+        if ($this->getMsgType() != self::MSGTYPE_LINK OR $this->getEvent() != self::EVENT_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method only available with Event:location');
+            return FALSE;
+        }
+        return $this->message['latitude'];
     }
 
     public function getLongitude() {
-        log_message('error', 'Not implemented method: '.__METHOD__.'()');
-        return FALSE;
+        if ($this->getMsgType() != self::MSGTYPE_LINK OR $this->getEvent() != self::EVENT_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method only available with Event:location');
+            return FALSE;
+        }
+        return $this->message['longitude'];
+    }
+
+    public function getPrecision() {
+        if ($this->getMsgType() != self::MSGTYPE_LINK OR $this->getEvent() != self::EVENT_LOCATION) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Method only available with Event:location');
+            return FALSE;
+        }
+        return $this->message['precision'];
     }
 }

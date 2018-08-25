@@ -28,7 +28,7 @@ public static $xml03 = '<xml>
     <CreateTime>1357290913</CreateTime>
     <MsgType><![CDATA[voice]]></MsgType>
     <MediaId><![CDATA[media_id]]></MediaId>
-    <Format><![CDATA[Format]]></Format>
+    <Format><![CDATA[Formattttttttttt]]></Format>
     <MsgId>1234567890123456</MsgId>
 </xml>';
 
