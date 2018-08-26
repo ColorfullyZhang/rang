@@ -10,6 +10,17 @@ public static $xml01 = '<xml>
     <MsgId>1234567890123456</MsgId>
 </xml>';
 
+//<!-- 点击菜单拉取消息时的事件 -->
+//<!-- landmark quotation customer contact staff unknown -->
+public static $xml16 = '<xml>
+    <ToUserName><![CDATA[toUser_16]]></ToUserName>
+    <FromUserName><![CDATA[fromUser_01]]></FromUserName>
+    <CreateTime>123456789</CreateTime>
+    <MsgType><![CDATA[event]]></MsgType>
+    <Event><![CDATA[CLICK]]></Event>
+    <EventKey><![CDATA[customer]]></EventKey>
+</xml>';
+
 //<!-- 图片消息 -->
 public static $xml02 = '<xml>
     <ToUserName><![CDATA[toUser_02]]></ToUserName>
@@ -143,17 +154,6 @@ public static $xml15 = '<xml>
     <Latitude>23.137466</Latitude>
     <Longitude>113.352425</Longitude>
     <Precision>119.385040</Precision>
-</xml>';
-
-//<!-- 点击菜单拉取消息时的事件 -->
-//<!-- landmark quotation customer contact staff unknown -->
-public static $xml16 = '<xml>
-    <ToUserName><![CDATA[toUser_16]]></ToUserName>
-    <FromUserName><![CDATA[fromUser_01]]></FromUserName>
-    <CreateTime>123456789</CreateTime>
-    <MsgType><![CDATA[event]]></MsgType>
-    <Event><![CDATA[CLICK]]></Event>
-    <EventKey><![CDATA[customer]]></EventKey>
 </xml>';
 
 //<!-- 点击菜单跳转链接时的事件 -->

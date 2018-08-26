@@ -31,26 +31,66 @@ class Ddqddz extends CI_Controller {
             $content   = $this->weixin->message->getContent(); 
             $this->load->library('exceldata');
             if (! $this->exceldata->canUse()) {
-                $this->weixin->sendResponse('查询功能当前不可用');
+                $this->weixin->sendResponse('查询功能暂不可用');
                 return;
             }
             $response  = '';
             switch ($queryType) {
             case Exceldata::QUERY_LANDMARK:
-                $response = $this->exceldata->Landmark($content);
+                $data = $this->exceldata->landmark($content);
+                if (gettype($data) == 'string') {
+                    $response = $data;
+                } else if (gettype($data) == 'array') {
+                    $response = $this->parser->parse('landmark', $data, TRUE);
+                } else {
+                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:landmark()');
+                    $response = '查询功能暂不可用';
+                }
                 break;
             case Exceldata::QUERY_CUSTOMER:
-                $response = $this->exceldata->Customer($content);
+                $data = $this->exceldata->customer($content);
+                if (gettype($data) == 'string') {
+                    $response = $data;
+                } else if (gettype($data) == 'array') {
+                    $response = $this->parser->parse('customer', $data, TRUE);
+                } else {
+                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:customer()');
+                    $response = '查询功能暂不可用';
+                }
                 break;
             case Exceldata::QUERY_CONTACT:
-                $response = $this->exceldata->Contact($content);
+                $data = $this->exceldata->contact($content);
+                if (gettype($data) == 'string') {
+                    $response = $data;
+                } else if (gettype($data) == 'array') {
+                    $response = $this->parser->parse('contact', $data, TRUE);
+                } else {
+                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:contact()');
+                    $response = '查询功能暂不可用';
+                }
                 break;
             case Exceldata::QUERY_STAFF:
-                $response = $this->exceldata->Staff($content);
+                $data = $this->exceldata->staff($content);
+                if (gettype($data) == 'string') {
+                    $response = $data;
+                } else if (gettype($data) == 'array') {
+                    $response = $this->parser->parse('staff', $data, TRUE);
+                } else {
+                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:staff()');
+                    $response = '查询功能暂不可用';
+                }
                 break;
             case Exceldata::QUERY_QUOTATION:
-                // parse $content
+                // parse query $content
                 //$response = $this->exceldata->Quote($content);
+                if (gettype($data) == 'string') {
+                    $response = $data;
+                } else if (gettype($data) == 'array') {
+                    $response = $this->parser->parse('quote', $data, TRUE);
+                } else {
+                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:quote()');
+                    $response = '查询功能暂不可用';
+                }
                 $response = 'Not implemented';
                 break;
             default:

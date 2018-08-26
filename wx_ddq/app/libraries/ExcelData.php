@@ -40,7 +40,7 @@ class Exceldata {
         return $this->status;
     }
 
-    public function Landmark($landmark = NULL) {
+    public function landmark($landmark = NULL) {
         if (is_null($landmark)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid landmark: {$landmark}");
             return '查询出错';
@@ -70,10 +70,11 @@ class Exceldata {
                 );
             }
         }
-        return $this->CI->parser->parse('landmark', $data, TRUE);
+        return $data;
+        //return $this->CI->parser->parse('landmark', $data, TRUE);
     }
 
-    public function Customer($customer = NULL) {
+    public function customer($customer = NULL) {
         if (is_null($customer)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid customer: {$customer}");
             return '查询出错';
@@ -94,10 +95,11 @@ class Exceldata {
         if (! isset($data['customer'])) {
            return '什么也没查到'; 
         }
-        return $this->CI->parser->parse('customer', $data, TRUE);
+        return $data;
+        //return $this->CI->parser->parse('customer', $data, TRUE);
     }
 
-    public function Quote($dest = NULL, $shipOwner = NULL, $sortCTN = '20G') {
+    public function quote($dest = NULL, $shipOwner = NULL, $sortCTN = '20G') {
         if (is_null($dest)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid destination: {$dest}");
             return '查询出错';
@@ -142,10 +144,11 @@ class Exceldata {
             return 'Nothing Found';
         }
         array_multisort($sort, $data['quotations']);
-        return $this->CI->parser->parse('quote', $data, TRUE);
+        return $data;
+        //return $this->CI->parser->parse('quote', $data, TRUE);
     }
 
-    public function Staff($staff = NULL) {
+    public function staff($staff = NULL) {
         if (is_null($staff)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid Staff: {$staff}");
             return '查询出错';
@@ -168,10 +171,11 @@ class Exceldata {
         if (! isset($data['name'])) {
             return 'Nothing Found';
         }
-        return $this->CI->parser->parse('staff', $data, TRUE);
+        return $data;
+        //return $this->CI->parser->parse('staff', $data, TRUE);
     }
 
-    public function Contact($contact = NULL) {
+    public function contact($contact = NULL) {
         return 'Not implemented';
     }
 }
