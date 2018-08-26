@@ -73,12 +73,21 @@ class Ddqddz extends CI_Controller {
             $msg->setResponseMessage(array('content' => 'Link Received'));
             break;
         case '11':
-            $msg->loadMessage(AAA::$xml11);
+            $this->weixin->message->loadMessage(AAA::$xml11);
+            if ($this->weixin->message->getMsgType() == WeixinMessage::MSGTYPE_EVENT &&
+                $this->weixin->message->getEvent() == WeixinMessage::EVENT_SUBSCRIBE) {
+                $this->weixin->sendResponse($this->weixin->message->getFromUserName().', Thank you for following......');
+            } else {
+                $this->weixin->sendResponse('Not subscribe message');
+            }
             break;
         case '12':
-            $msg->loadMessage(AAA::$xml12);
-            log_message('info', 'Unsubscribed userName: '.$msg->getFromUserName());
-            $msg->setResponseMessage();
+            $this->weixin->message->loadMessage(AAA::$xml12);
+            if ($this->weixin->message->getMsgType() == WeixinMessage::MSGTYPE_EVENT &&
+                $this->weixin->message->getEvent() == WeixinMessage::EVENT_UNSUBSCRIBE) {
+                log_message('info', "User: {$this->weixin->message->getFromUserName()} unsubscribed");
+                $this->weixin->sendResponse();
+            }
             break;
         case '13':
             $msg->loadMessage(AAA::$xml13);
@@ -93,8 +102,36 @@ class Ddqddz extends CI_Controller {
             $msg->setResponseMessage();
             break;
         case '16':
-            $msg->loadMessage(AAA::$xml16);
-            $msg->setResponseMessage(array('content' => $msg->getEventKey()));
+            $this->weixin->message->loadMessage(AAA::$xml16);
+            if ($this->weixin->message->getMsgType() == WeixinMessage::MSGTYPE_EVENT &&
+                $this->weixin->message->getEvent() == WeixinMessage::EVENT_CLICK) {
+                $this->load->library('weixin/weixinMenu');
+                switch ($this->weixin->message->getEventKey()) {
+                case WeixinMenu::MENU_LANDMARK: 
+                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_LANDMARK);
+                    $this->weixin->sendResponse('请回复地标...');
+                    break;
+                case WeixinMenu::MENU_QUOTATION:
+                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_QUOTATION);
+                    $this->weixin->sendResponse('请回复目的港、船东和箱型...');
+                    break;
+                case WeixinMenu::MENU_CUSTOMER:
+                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CUSTOMER);
+                    $this->weixin->sendResponse('请回复公司抬头...');
+                    break;
+                case WeixinMenu::MENU_CONTACT:
+                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CONTACT);
+                    $this->weixin->sendResponse('请回复客户姓名...');
+                    break;
+                case WeixinMenu::MENU_STAFF:
+                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_STAFF);
+                    $this->weixin->sendResponse('请回复同事姓名...');
+                    break;
+                default:
+                    $this->weixin->sendResponse('该功能已停用');
+                    break;
+                }
+            }
             break;
         case '17':
             $msg->loadMessage(AAA::$xml17);

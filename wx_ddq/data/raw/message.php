@@ -146,13 +146,14 @@ public static $xml15 = '<xml>
 </xml>';
 
 //<!-- 点击菜单拉取消息时的事件 -->
+//<!-- landmark quotation customer contact staff unknown -->
 public static $xml16 = '<xml>
     <ToUserName><![CDATA[toUser_16]]></ToUserName>
-    <FromUserName><![CDATA[FromUser_16]]></FromUserName>
+    <FromUserName><![CDATA[sssssdssss]]></FromUserName>
     <CreateTime>123456789</CreateTime>
     <MsgType><![CDATA[event]]></MsgType>
     <Event><![CDATA[CLICK]]></Event>
-    <EventKey><![CDATA[keyyyyyyyyyyyyyyyyyyyyyy]]></EventKey>
+    <EventKey><![CDATA[customer]]></EventKey>
 </xml>';
 
 //<!-- 点击菜单跳转链接时的事件 -->

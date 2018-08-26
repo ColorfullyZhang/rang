@@ -127,4 +127,7 @@ class Excel {
         if (! isset($data['name'])) exit('Nothing Found!');
         $this->parser->parse('staff', $data);
     }
+
+    public function Contact($contact = NULL) {
+    }
 }

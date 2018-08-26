@@ -13,6 +13,19 @@ class WeixinMessage {
     const MSGTYPE_VIDEO      = 'video';
     const MSGTYPE_VOICE      = 'voice';
 
+    private static $msgTypes = array(
+        self::MSGTYPE_EVENT,
+        self::MSGTYPE_IMAGE,
+        self::MSGTYPE_LINK,
+        self::MSGTYPE_LOCATION,
+        self::MSGTYPE_MUSIC,
+        self::MSGTYPE_NEWS,
+        self::MSGTYPE_SHORTVIDEO,
+        self::MSGTYPE_TEXT,
+        self::MSGTYPE_VIDEO,
+        self::MSGTYPE_VOICE
+    );
+
     const EVENT_CLICK       = 'click';
     const EVENT_LOCATION    = 'location';
     const EVENT_SCAN        = 'scan';
@@ -33,7 +46,8 @@ class WeixinMessage {
         self::MSGTYPE_NEWS,
         self::MSGTYPE_VIDEO,
         self::MSGTYPE_VOICE,
-        self::MSGTYPE_TEXT
+        self::MSGTYPE_TEXT,
+        'text'
     );
     private $responseMsgType = self::MSGTYPE_TEXT;
 
@@ -58,9 +72,9 @@ class WeixinMessage {
         $this->toUserName   = $this->domValue($dom, 'ToUserName');
         $this->fromUserName = $this->domValue($dom, 'FromUserName');
         $this->createTime   = $this->domValue($dom, 'CreateTime');
-        $msgType            = $this->domValue($dom, 'MsgType');
+        $this->setMsgType($this->domValue($dom, 'MsgType'));
 
-        switch ($msgType) {
+        switch ($this->msgType) {
         case self::MSGTYPE_TEXT:
             log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
@@ -121,36 +135,46 @@ class WeixinMessage {
             break;
         case self::MSGTYPE_EVENT:
             $this->message['event'] = strtolower($this->domValue($dom, 'Event'));
-            switch ($this->message['event']) {
+            switch ($this->getEvent()) {
             case self::EVENT_SUBSCRIBE:
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
                 break;
             case self::EVENT_CLICK:
                 $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                log_message('info', '>>> '.__METHOD__."() logs: Event:{$this->getEvent()}:{$this->getEventKey()} received");
                 break;
             case self::EVENT_UNSUBSCRIBE:
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
                 break;
             case self::EVENT_VIEW:
                 $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->message['event']} received");
+                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
                 break;
             default:
-                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']} received");
+                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->getEvent()} received");
             }
             break;
         case self::MSGTYPE_MUSIC:
         case self::MSGTYPE_NEWS:
-            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$msgType} received");
+            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->getMsgType()} received");
             break;
         default:
-            $msgType = NULL;
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid message type: {$msgType} received");
+            $this->msgType = NULL;
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid message type: {$this->getMsgType()} received");
         }
-        $this->msgType = $msgType;
 
         return $this;
+    }
+
+    private function setMsgType($msgType) {
+        if (! in_array($msgType, self::$msgTypes)) {
+            $this->msgType = NULL;
+        }
+        $this->msgType = $msgType;
+    }
+
+    private function resetMsgType() {
+        $this->setMsgType(NULL);
     }
 
     public function setResponseMsgType($msgType = self::MSGTYPE_TEXT) {
@@ -201,24 +225,28 @@ class WeixinMessage {
         return TRUE;
     }
 
-    // 返回要发给微信服务器的信息
-    public function getResponse($message) {
-        if ($this->msgType == self::MSGTYPE_EVENT && $this->getEvent() == self::EVENT_UNSUBSCRIBE) {
-            log_message('info', '>>> '.__METHOD__.'() logs: "success" responsed');
-            $this->responseSuccess();
+    public function sendResponse($message = NULL, $echostr = FALSE) {
+        if ($echostr) {
+            echo $message;
+            return;
         }
-        if (! $this->setResponseMessage($message)) {
-            $this->responseSuccess();
+ 
+        // 哪些情况直接回复success
+        if (! is_null($message) && ! $this->setResponseMessage($message)) {
+            return $this->responseSuccess();
         }
-
-        // 收到哪些信息现在还不能回复，支持一个可删除一个
         switch ($this->msgType) {
         case self::MSGTYPE_EVENT:
             switch ($this->getEvent()) {
+            case self::EVENT_UNSUBSCRIBE: // Always response success on receiving unsubscribe message
+                return $this->responseSuccess();
+                break;
             case self::EVENT_LOCATION:
             case self::EVENT_SCAN:
+            case self::EVENT_VIEW:
                 log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']}");
-                $this->responseSuccess();
+                return $this->responseSuccess();
+                break;
             }
             break;
         case self::MSGTYPE_LINK:
@@ -230,38 +258,34 @@ class WeixinMessage {
         case self::MSGTYPE_VOICE:
         case self::MSGTYPE_IMAGE:
             log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->msgType}");
-            $this->responseSuccess();
+            return $this->responseSuccess();
+            break;
         }
         
         $dom = new DOMDocument();
         $e   = $dom->createElement('xml');
-        $e->appendChild($dom->createElement('ToUserName'))
-          ->appendChild($dom->createCDATASection($this->fromUserName));
-        $e->appendChild($dom->createElement('FromUserName'))
-          ->appendChild($dom->createCDATASection($this->toUserName));
-        $e->appendChild($dom->createElement('CreateTime'))
-          ->appendChild($dom->createTextNode($this->createTime));
+        $e->appendChild($dom->createElement('ToUserName'))->appendChild($dom->createCDATASection($this->fromUserName));
+        $e->appendChild($dom->createElement('FromUserName'))->appendChild($dom->createCDATASection($this->toUserName));
+        $e->appendChild($dom->createElement('CreateTime'))->appendChild($dom->createTextNode($this->createTime));
         
         switch ($this->responseMsgType) {
         case self::MSGTYPE_TEXT:
-            if ($this->msgType == self::MSGTYPE_EVENT && $this->message['event'] == self::EVENT_SUBSCRIBE) {
-                $this->setResponseMessage(array('content' => 'Thank you for your follow!'));
-            } else if (! isset($this->responseMessage['content'])) {
+            if (! isset($this->responseMessage['content'])) {
                 log_message('info', '>>> '.__METHOD__.'() logs: "content" must be set before response text message');
-                $this->responseSuccess();
+                return $this->responseSuccess();
             }
-            $e->appendChild($dom->createElement('MsgType'))
-              ->appendChild($dom->createCDATASection($this->responseMsgType));
-            $e->appendChild($dom->createElement('Content'))
-              ->appendChild($dom->createCDATASection($this->responseMessage['content']));
+            $e->appendChild($dom->createElement('MsgType'))->appendChild($dom->createCDATASection($this->responseMsgType));
+            $e->appendChild($dom->createElement('Content'))->appendChild($dom->createCDATASection($this->responseMessage['content']));
             break;
         default:
             log_message('info', '>>> '.__METHOD__.'() logs: responseMsgType: '.$this->responseMsgType.' is not supported at the moment');
-            $this->responseSuccess();
+            return $this->responseSuccess();
+            break;
         }
         $dom->appendChild($e);
         log_message('info', '>>> '.__METHOD__.'() logs: '.$this->responseMsgType.' message responsed');
-        return $dom->saveXML();
+        echo $dom->saveXML();
+        return;
     }
    
     public function getMsgType() {
@@ -448,6 +472,5 @@ class WeixinMessage {
     public function responseSuccess() {
         log_message('info', '>>> "success" sent to Weixin server');
         echo 'success';
-        exit;
     }
 }

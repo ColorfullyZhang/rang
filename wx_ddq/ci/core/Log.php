@@ -251,7 +251,7 @@ class CI_Log {
 	 */
 	protected function _format_line($level, $date, $message)
 	{
-		return $level.' - '.$date.' --> '.$message."\n";
+		return sprintf('%-5s', $level).' - '.$date.' --> '.$message."\n";
 	}
 
 	// --------------------------------------------------------------------
