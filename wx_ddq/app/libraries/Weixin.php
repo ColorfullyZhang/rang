@@ -26,7 +26,8 @@ class Weixin {
     }
 
     public function checkSignature() {
-        if ($this->CI->input->get('signature') === NULL) { $this->message = new WeixinMessage(ENVIRONMENT == 'production');
+        if ($this->CI->input->get('signature') === NULL) {
+            $this->message = new WeixinMessage(ENVIRONMENT == 'production');
             return FALSE;
         } else {
             $arr = array($this->token,
@@ -49,7 +50,12 @@ class Weixin {
         $this->message->sendResponse($message, $echostr);
     }
 
-    public function saveQueryMark($userName, $queryType) {
+    public function saveQueryType($userName, $queryType) {
+        $this->CI->load->library('exceldata');
+        if (! in_array($queryType, Exceldata::$queryTypes)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$queryType}");
+            return FALSE;
+        }
         $this->CI->load->helper('file');
         if (! file_exists(self::$queryLog) ) {
             touch(self::$queryLog);
@@ -63,7 +69,7 @@ class Weixin {
         return TRUE;
     }
 
-    public function getQueryMark($userName) {
+    public function getQueryType($userName) {
         $this->CI->load->helper('file');
         if (! file_exists(self::$queryLog) ) {
             touch(self::$queryLog);

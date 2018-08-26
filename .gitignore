@@ -1,3 +1,5 @@
+!/wx_ddq/app/*/.htaccess
+
 /~$*
 /wx_ddq/ci/.htaccess
 /wx_ddq/app/.htaccess
@@ -8,7 +10,9 @@
 /wx_ddq/app/logs/*
 !/wx_ddq/app/logs/index.html
 
-!/wx_ddq/app/*/.htaccess
 /wx_ddq/data/logs/*
 /wx_ddq/data/runtime/*
 /分工.jpg
+
+/wx_ddq/data/raw/*
+!/wx_ddq/data/raw/message.php

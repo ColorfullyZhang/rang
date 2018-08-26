@@ -25,7 +25,40 @@ class Ddqddz extends CI_Controller {
             $this->weixin->message->loadMessage(AAA::$xml01);
             log_message('info', 'Content: '.$this->weixin->message->getContent());
             log_message('info', 'MsgId: '.$this->weixin->message->getMsgId());
-            $this->weixin->sendResponse('Contratulations!');
+
+            $this->weixin->message->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
+            $queryType = $this->weixin->getQueryType($this->weixin->message->getFromUserName());
+            $content   = $this->weixin->message->getContent(); 
+            $this->load->library('exceldata');
+            if (! $this->exceldata->canUse()) {
+                $this->weixin->sendResponse('查询功能当前不可用');
+                return;
+            }
+            $response  = '';
+            switch ($queryType) {
+            case Exceldata::QUERY_LANDMARK:
+                $response = $this->exceldata->Landmark($content);
+                break;
+            case Exceldata::QUERY_CUSTOMER:
+                $response = $this->exceldata->Customer($content);
+                break;
+            case Exceldata::QUERY_CONTACT:
+                $response = $this->exceldata->Contact($content);
+                break;
+            case Exceldata::QUERY_STAFF:
+                $response = $this->exceldata->Staff($content);
+                break;
+            case Exceldata::QUERY_QUOTATION:
+                // parse $content
+                //$response = $this->exceldata->Quote($content);
+                $response = 'Not implemented';
+                break;
+            default:
+                $response = '请先选择查询类型';
+                break;
+            }
+
+            $this->weixin->sendResponse($response);
             break;
         case '02':
             $this->weixin->message->loadMessage(AAA::$xml02);
@@ -108,23 +141,23 @@ class Ddqddz extends CI_Controller {
                 $this->load->library('weixin/weixinMenu');
                 switch ($this->weixin->message->getEventKey()) {
                 case WeixinMenu::MENU_LANDMARK: 
-                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_LANDMARK);
+                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_LANDMARK);
                     $this->weixin->sendResponse('请回复地标...');
                     break;
                 case WeixinMenu::MENU_QUOTATION:
-                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_QUOTATION);
+                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_QUOTATION);
                     $this->weixin->sendResponse('请回复目的港、船东和箱型...');
                     break;
                 case WeixinMenu::MENU_CUSTOMER:
-                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CUSTOMER);
+                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CUSTOMER);
                     $this->weixin->sendResponse('请回复公司抬头...');
                     break;
                 case WeixinMenu::MENU_CONTACT:
-                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CONTACT);
+                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CONTACT);
                     $this->weixin->sendResponse('请回复客户姓名...');
                     break;
                 case WeixinMenu::MENU_STAFF:
-                    $this->weixin->saveQueryMark($this->weixin->message->getFromUserName(), WeixinMenu::MENU_STAFF);
+                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_STAFF);
                     $this->weixin->sendResponse('请回复同事姓名...');
                     break;
                 default:

@@ -1,25 +1,50 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Excel {
+class Exceldata {
+    const QUERY_LANDMARK  = 'landmark';
+    const QUERY_CUSTOMER  = 'customer';
+    const QUERY_CONTACT   = 'contact';
+    const QUERY_STAFF     = 'staff';
+    const QUERY_QUOTATION = 'quotation';
+    public static $queryTypes = array(
+        self::QUERY_LANDMARK,
+        self::QUERY_CUSTOMER,
+        self::QUERY_CONTACT,
+        self::QUERY_STAFF,
+        self::QUERY_QUOTATION
+    );
+
     private $excel;
+    private $status;
+
+    protected $CI;
     
     public function __construct() {
-        parent::__construct();
+        $file = DATAPATH.'raw/Africa_data.xlsx';
+        if (! file_exists($file)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: Data file "'.$file.'" does not exist');
+            $this->status = FALSE;
+        } else {
+            $this->CI =& get_instance();
 
-        $file = DATAPATH.'Africa_data.xlsx';
-        if (! file_exists($file)) exit('Data file "'.$file.'" does not exist!');
-        //$this->output->cache(4320); //cache 3 days
-        //$this->output->delete_cache(); //cache 3 days
+            $this->CI->load->library('PHPExcel');
+		    $this->CI->load->library('PHPExcel/PHPExcel_IOFactory');
+            $reader = PHPExcel_IOFactory::createReaderForFile($file);
+            $this->excel = $reader->load($file);
+            $this->status = TRUE;
+        }
+    }
 
-        $this->load->library('PHPExcel');
-		$this->load->library('PHPExcel/PHPExcel_IOFactory');
-        $reader = PHPExcel_IOFactory::createReaderForFile($file);
-        $this->excel = $reader->load($file);
+    public function canUse() {
+        return $this->status;
     }
 
     public function Landmark($landmark = NULL) {
-        if (is_null($landmark)) exit('Landmark needed!');
+        if (is_null($landmark)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid landmark: {$landmark}");
+            return '查询出错';
+        }
 
         $this->excel->setActiveSheetIndexByName('Landmark');
         $activeSheet = $this->excel->getActiveSheet();
@@ -30,7 +55,9 @@ class Excel {
                 $data['address'] = $activeSheet->getCell('B'.$r)->getValue();
             }
         }
-        if (! isset($data['landmark'])) exit('Nothing Found!');
+        if (! isset($data['landmark'])) {
+           return '什么也没查到'; 
+        }
 
         $this->excel->setActiveSheetIndexByName('Customer');
         $activeSheet = $this->excel->getActiveSheet();
@@ -43,11 +70,14 @@ class Excel {
                 );
             }
         }
-        $this->parser->parse('landmark', $data);
+        return $this->CI->parser->parse('landmark', $data, TRUE);
     }
 
     public function Customer($customer = NULL) {
-        if (is_null($customer)) exit('Customer Needed!');
+        if (is_null($customer)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid customer: {$customer}");
+            return '查询出错';
+        }
 
         $this->excel->setActiveSheetIndexByName('Customer');
         $activeSheet = $this->excel->getActiveSheet();
@@ -61,12 +91,17 @@ class Excel {
                 $data['focus']    = $activeSheet->getCell('F'.$r)->getValue();
             }
         }
-        if (! isset($data['customer'])) exit('Nothing Found!');
-        $this->parser->parse('customer', $data);
+        if (! isset($data['customer'])) {
+           return '什么也没查到'; 
+        }
+        return $this->CI->parser->parse('customer', $data, TRUE);
     }
 
     public function Quote($dest = NULL, $shipOwner = NULL, $sortCTN = '20G') {
-        if (is_null($dest)) exit('Destination needed!');
+        if (is_null($dest)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid destination: {$dest}");
+            return '查询出错';
+        }
         $dest = strtolower(trim($dest));
         $this->excel->setActiveSheetIndexByName('Pricelist');
 
@@ -81,7 +116,7 @@ class Excel {
             case $header[13] <> 'E3':
             case $header[14] <> 'AE':
             case $header[29] <> '快捷报价':
-                exit('Table Structure Changed!');
+                return 'Table Structure Changed!';
         }
 
         list($cDest, $cShipOwner, $cCTN20G, $cEBS20G, $cCTN40G, $cEBS40G,
@@ -103,12 +138,18 @@ class Excel {
                 'quotation' => $activeSheet->getCell($cQuotation.$r)->getValue()
             );
         }
+        if (count($data) == 0) {
+            return 'Nothing Found';
+        }
         array_multisort($sort, $data['quotations']);
-        $this->parser->parse('quote', $data);
+        return $this->CI->parser->parse('quote', $data, TRUE);
     }
 
     public function Staff($staff = NULL) {
-        if (is_null($staff)) exit('Staff Needed!');
+        if (is_null($staff)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid Staff: {$staff}");
+            return '查询出错';
+        }
 
         $this->excel->setActiveSheetIndexByName('Staff');
         $activeSheet = $this->excel->getActiveSheet();
@@ -124,10 +165,13 @@ class Excel {
                 );
             }
         }
-        if (! isset($data['name'])) exit('Nothing Found!');
-        $this->parser->parse('staff', $data);
+        if (! isset($data['name'])) {
+            return 'Nothing Found';
+        }
+        return $this->CI->parser->parse('staff', $data, TRUE);
     }
 
     public function Contact($contact = NULL) {
+        return 'Not implemented';
     }
 }
