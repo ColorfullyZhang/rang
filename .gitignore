@@ -9,4 +9,6 @@
 !/wx_ddq/app/logs/index.html
 
 !/wx_ddq/app/*/.htaccess
-/wx_ddq/data/*
+/wx_ddq/data/logs/*
+/wx_ddq/data/runtime/*
+/分工.jpg
