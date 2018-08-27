@@ -3,15 +3,100 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 include DATAPATH.'raw/message.php';
 
 class Ddqddz extends CI_Controller {
+    private static $queryLog = DATAPATH.'runtime/querylog.txt';
+
     public function __construct() {
         parent::__construct();
 
         $this->load->library('weixin');
     }
 
-    public function index() {
+    public function index($index) {
         if ($this->weixin->checkSignature()) {
             return;
+        }
+        
+        $xml = 'xml'.$index;
+        $this->weixin->message->loadMessage(AAA::$$xml);
+        switch ($this->weixin->message->getMsgType()) {
+        case WeixinMessage::MSGTYPE_EVENT:
+            switch ($this->weixin->message->getEvent()) {
+                case WeixinMessage::EVENT_CLICK:
+                    $this->load->library('exceldata');
+                    switch ($this->weixin->message->getEventKey()) {
+                    case Exceldata::QUERY_LANDMARK: 
+                        $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                             array('queryType' => Exceldata::QUERY_LANDMARK));
+                        $this->weixin->sendResponse('请回复地标...');
+                        break;
+                    case Exceldata::QUERY_CUSTOMER:
+                        $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                             array('queryType' => Exceldata::QUERY_CUSTOMER));
+                        $this->weixin->sendResponse('请回复目的港、船东和箱型...');
+                        break;
+                    case Exceldata::QUERY_CONTACT:
+                        $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                             array('queryType' => Exceldata::QUERY_CONTACT));
+                        $this->weixin->sendResponse('请回复公司抬头...');
+                        break;
+                    case Exceldata::QUERY_STAFF:
+                        $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                             array('queryType' => Exceldata::QUERY_STAFF));
+                        $this->weixin->sendResponse('请回复客户姓名...');
+                        break;
+                    case Exceldata::QUERY_QUOTATION:
+                        /*
+                            * $queryLogData[$userName] = array(
+                            *     'time'      => 'xxxx-xx-xx xx:xx:xx',
+                            *     'queryType' => 'landmark',
+                            *     'dest'      => 'dar es salaam',
+                            *     'shipOwner' => array('msk', 'saf'),
+                            *     'container' => array('20g', '40g')
+                            * );
+                            */
+                        $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                             array('queryType' => Exceldata::QUERY_QUOTATION));
+                        $this->weixin->sendResponse('请回复同事姓名...');
+                        break;
+                    default:
+                        $this->weixin->sendResponse('该功能已停用');
+                        break;
+                    }
+                    break;
+                case WeixinMessage::EVENT_LOCATION:
+                    break;
+                case WeixinMessage::EVENT_SCAN:
+                    break;
+                case WeixinMessage::EVENT_SUBSCRIBE:
+                    break;
+                case WeixinMessage::EVENT_UNSUBSCRIBE:
+                    break;
+                case WeixinMessage::EVENT_VIEW:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case WeixinMessage::MSGTYPE_IMAGE:
+            break;
+        case WeixinMessage::MSGTYPE_LINK:
+            break;
+        case WeixinMessage::MSGTYPE_LOCATION:
+            break;
+        case WeixinMessage::MSGTYPE_MUSIC:
+            break;
+        case WeixinMessage::MSGTYPE_NEWS:
+            break;
+        case WeixinMessage::MSGTYPE_SHORTVIDEOS:
+            break;
+        case WeixinMessage::MSGTYPE_TEXT:
+            break;
+        case WeixinMessage::MSGTYPE_VIDEO:
+            break;
+        case WeixinMessage::MSGTYPE_VOICE:
+            break;
+        default:
+            break;
         }
     }
 
@@ -27,7 +112,7 @@ class Ddqddz extends CI_Controller {
             log_message('info', 'MsgId: '.$this->weixin->message->getMsgId());
 
             $this->weixin->message->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
-            $queryType = $this->weixin->getQueryType($this->weixin->message->getFromUserName());
+            $queryType = $this->getQueryType($this->weixin->message->getFromUserName());
             $content   = $this->weixin->message->getContent(); 
             $this->load->library('exceldata');
             if (! $this->exceldata->canUse()) {
@@ -181,23 +266,28 @@ class Ddqddz extends CI_Controller {
                 $this->load->library('weixin/weixinMenu');
                 switch ($this->weixin->message->getEventKey()) {
                 case WeixinMenu::MENU_LANDMARK: 
-                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_LANDMARK);
+                    $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                         array('queryType' => WeixinMenu::MENU_LANDMARK));
                     $this->weixin->sendResponse('请回复地标...');
                     break;
                 case WeixinMenu::MENU_QUOTATION:
-                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_QUOTATION);
+                    $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                         array('queryType' => WeixinMenu::MENU_QUOTATION));
                     $this->weixin->sendResponse('请回复目的港、船东和箱型...');
                     break;
                 case WeixinMenu::MENU_CUSTOMER:
-                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CUSTOMER);
+                    $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                         array('queryType' => WeixinMenu::MENU_CUSTOMER));
                     $this->weixin->sendResponse('请回复公司抬头...');
                     break;
                 case WeixinMenu::MENU_CONTACT:
-                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_CONTACT);
+                    $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                         array('queryType' => WeixinMenu::MENU_CONTACT));
                     $this->weixin->sendResponse('请回复客户姓名...');
                     break;
                 case WeixinMenu::MENU_STAFF:
-                    $this->weixin->saveQueryType($this->weixin->message->getFromUserName(), WeixinMenu::MENU_STAFF);
+                    $this->saveQueryType($this->weixin->message->getFromUserName(),
+                                         array('queryType' => WeixinMenu::MENU_STAFF));
                     $this->weixin->sendResponse('请回复同事姓名...');
                     break;
                 default:
@@ -215,5 +305,47 @@ class Ddqddz extends CI_Controller {
             return;
             break;
         }
+    }
+
+    
+    private function saveQueryType($userName, $data) {
+        $this->load->library('exceldata');
+        if (! in_array($data['queryType'], Exceldata::$queryTypes)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$data['queryType']}");
+            return FALSE;
+        }
+        $this->load->helper('file');
+        if (! file_exists(self::$queryLog) ) {
+            touch(self::$queryLog);
+        }
+        if (($queryLogData = json_decode(file_get_contents(self::$queryLog), TRUE)) === NULL) {
+            $queryLogData = array();
+        }
+        $logData = $queryLogData[$userName];
+        unset($queryLogData[$userName]);
+        $queryLogData[$userName] = array(
+            'time'      => date('Y-m-d H:i:s'),
+            'queryType' => $data['queryType'],
+        );
+        if ($data['queryType'] = Exceldata::QUERY_LANDMARK) {
+            $queryLogData[$userName] = array(
+                'dest'      => isset($data['dest']) ? $data['dest'] : NULL,
+                'shipOwner' => isset($data['shipOwner']) ? $data['shipOwner'] : NULL,
+                'container' => isset($data['container']) ? $data['container'] : NULL
+            );
+        }
+        write_file(self::$queryLog, json_encode($queryLogData));
+        return TRUE;
+    }
+
+    private function getQueryType($userName) {
+        $this->load->helper('file');
+        if (! file_exists(self::$queryLog) ) {
+            touch(self::$queryLog);
+        }
+        if (($queryLogData = json_decode(file_get_contents(self::$queryLog), TRUE)) === NULL) {
+            $queryLogData = array();
+        }
+        return array_key_exists($userName, $queryLogData) ? $queryLogData[$userName] : NULL;
     }
 }

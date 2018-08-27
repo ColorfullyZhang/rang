@@ -14,6 +14,15 @@ class Exceldata {
         self::QUERY_STAFF,
         self::QUERY_QUOTATION
     );
+    public static $shipOwners = array('ANL', 'APL', 'BLINE', 'CMA', 'CNC', 'COSCO', 'EMC',
+        'EMI', 'ESL', 'HBS', 'HMM', 'HPL', 'KMTC', 'MCC', 'MSC', 'MSK', 'NDS', 'ONE',
+        'OOCL', 'PIL', 'RCL', 'SAF', 'SCI', 'SMDL', 'TS', 'UASC', 'WHL', 'YML', 'ZIM'
+    );
+    public static $containerTypes = array(
+        '20' => '20GP', '20G' => '20GP', '20GP' => '20GP',
+        '40' => '40GP', '40G' => '40GP', '40GP' => '40GP',
+        '40H' => '40HQ', '40HQ' => '40HQ', '40HC' => '40HQ'
+    );
 
     private $excel;
     private $status;
@@ -135,7 +144,9 @@ class Exceldata {
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if (strtolower(trim($activeSheet->getCell($cDest.$r)->getValue())) <> $dest) continue;
+            if (strtolower(trim($activeSheet->getCell($cDest.$r)->getValue())) <> $dest) {
+                continue;
+            }
             $sort[] = intval($activeSheet->getCell($cPrice.$r)->getValue()) +
                 intval($activeSheet->getCell($cEBS.$r)->getValue()) +
                 intval($activeSheet->getCell($cAMSENS.$r)->getValue());

@@ -9,8 +9,7 @@ if (! defined('WEIXIN_ROOT')) {
 class Weixin {
     const RETURN_FAILED     = 'ggEwL0OuJOQ7OuBy';
 
-    private static $queryLog = DATAPATH.'runtime/querylog.txt';
-
+    //private static $queryLog = DATAPATH.'runtime/querylog.txt';
 
     private $appID          = 'wxfc4ad89f36beb189';
     private $appSecret      = '8de181c7b52dccd13087adb97b9620f0';
@@ -50,7 +49,7 @@ class Weixin {
         $this->message->sendResponse($message, $echostr);
     }
 
-    public function saveQueryType($userName, $queryType) {
+    /*public function saveQueryType($userName, $queryType) {
         $this->CI->load->library('exceldata');
         if (! in_array($queryType, Exceldata::$queryTypes)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$queryType}");
@@ -78,5 +77,5 @@ class Weixin {
             $data = array();
         }
         return array_key_exists($userName, $data) ? $data[$userName]['queryType'] : NULL;
-    }
+    }*/
 }
