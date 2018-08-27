@@ -56,7 +56,7 @@ class Exceldata {
             }
         }
         if (! isset($data['landmark'])) {
-           return '什么也没查到'; 
+           return '没有查到该地标：'.$landmark; 
         }
 
         $this->excel->setActiveSheetIndexByName('Customer');
@@ -93,13 +93,16 @@ class Exceldata {
             }
         }
         if (! isset($data['customer'])) {
-           return '什么也没查到'; 
+           return '没有查到该抬头：'.$customer; 
         }
         return $data;
         //return $this->CI->parser->parse('customer', $data, TRUE);
     }
 
-    public function quote($dest = NULL, $shipOwner = NULL, $sortCTN = '20G') {
+    public function quote($queryString = NULL) {
+        $dest = NULL;
+        $shipOwner = NULL;
+        $sortCTN = '20G';
         if (is_null($dest)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid destination: {$dest}");
             return '查询出错';
@@ -141,7 +144,7 @@ class Exceldata {
             );
         }
         if (count($data) == 0) {
-            return 'Nothing Found';
+            return '没有查到该报价：'.$queryString;
         }
         array_multisort($sort, $data['quotations']);
         return $data;
@@ -169,13 +172,37 @@ class Exceldata {
             }
         }
         if (! isset($data['name'])) {
-            return 'Nothing Found';
+            return '没有查到该同事：'.$staff;
         }
         return $data;
         //return $this->CI->parser->parse('staff', $data, TRUE);
     }
 
     public function contact($contact = NULL) {
-        return 'Not implemented';
+        if (is_null($contact)) {
+            log_message('info', '>>> '.__METHOD__."() logs: Invalid Contact: {$contact}");
+            return '查询出错';
+        }
+
+        $this->excel->setActiveSheetIndexByName('Namecards');
+        $activeSheet = $this->excel->getActiveSheet();
+        foreach ($activeSheet->getRowIterator() as $row) {
+            if (($r = $row->getRowIndex()) == 1) continue;
+            if ($activeSheet->getCell('C'.$r)->getValue() == $contact) {
+                $data = array(
+                    'customer' => $activeSheet->getCell('B'.$r)->getValue(),
+                    'contact'  => $contact,
+                    'pos'      => $activeSheet->getCell('D'.$r)->getValue(),
+                    'mob'      => $activeSheet->getCell('F'.$r)->getValue(),
+                    'tel'      => $activeSheet->getCell('G'.$r)->getValue(),
+                    'note'     => $activeSheet->getCell('H'.$r)->getValue()
+                );
+            }
+        }
+        if (! isset($data['contact'])) {
+            return '没有查到该客户：'.$contact;
+        }
+        return $data;
+        //return $this->CI->parser->parse('staff', $data, TRUE);
     }
 }

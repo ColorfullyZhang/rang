@@ -149,7 +149,7 @@ class Ddqddz extends CI_Controller {
             $this->weixin->message->loadMessage(AAA::$xml11);
             if ($this->weixin->message->getMsgType() == WeixinMessage::MSGTYPE_EVENT &&
                 $this->weixin->message->getEvent() == WeixinMessage::EVENT_SUBSCRIBE) {
-                $this->weixin->sendResponse($this->weixin->message->getFromUserName().', Thank you for following......');
+                $this->weixin->sendResponse($this->weixin->message->getFromUserName().', Thank you for following');
             } else {
                 $this->weixin->sendResponse('Not subscribe message');
             }

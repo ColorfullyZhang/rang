@@ -1,2 +1,2 @@
-{quotations}
-{quotation}{/quotations}
+{quotations}{quotation}
+{/quotations}
