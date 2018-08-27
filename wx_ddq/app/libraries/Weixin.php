@@ -43,39 +43,12 @@ class Weixin {
         }
     }
 
-    // 如果是微信接入请求，通过验证时发送回执，参数二仅此一处有用。
-    public function sendResponse($message = array(), $echostr = FALSE) {
+    public function sendResponse($message = NULL, $echostr = FALSE) {
         //echo $checkSignature ? $message : $this->message->getResponse($message);
         $this->message->sendResponse($message, $echostr);
     }
-
-    /*public function saveQueryType($userName, $queryType) {
-        $this->CI->load->library('exceldata');
-        if (! in_array($queryType, Exceldata::$queryTypes)) {
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$queryType}");
-            return FALSE;
-        }
-        $this->CI->load->helper('file');
-        if (! file_exists(self::$queryLog) ) {
-            touch(self::$queryLog);
-        }
-        if (($data = json_decode(file_get_contents(self::$queryLog), TRUE)) === NULL) {
-            $data = array();
-        }
-        unset($data[$userName]);
-        $data[$userName] = array('time' => date('Y-m-d H:i:s'), 'queryType' => $queryType);
-        write_file(self::$queryLog, json_encode($data));
-        return TRUE;
+    
+    public function responseSuccess($exit = FALSE) {
+        $this->message->responseSuccess($exit);
     }
-
-    public function getQueryType($userName) {
-        $this->CI->load->helper('file');
-        if (! file_exists(self::$queryLog) ) {
-            touch(self::$queryLog);
-        }
-        if (($data = json_decode(file_get_contents(self::$queryLog), TRUE)) === NULL) {
-            $data = array();
-        }
-        return array_key_exists($userName, $data) ? $data[$userName]['queryType'] : NULL;
-    }*/
 }

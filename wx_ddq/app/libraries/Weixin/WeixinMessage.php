@@ -469,8 +469,11 @@ class WeixinMessage {
     }
     
     // 当收到还不支持的信息时，只返回接收确认给微信服务器，对用户不予理会
-    public function responseSuccess() {
+    public function responseSuccess($exit = FALSE) {
         log_message('info', '>>> "success" sent to Weixin server');
-        echo 'success';
+        $this->sendResponse('success', TRUE);
+        if ($exit) {
+            exit;
+        }
     }
 }

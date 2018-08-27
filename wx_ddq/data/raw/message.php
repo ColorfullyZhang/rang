@@ -18,7 +18,7 @@ public static $xml16 = '<xml>
     <CreateTime>123456789</CreateTime>
     <MsgType><![CDATA[event]]></MsgType>
     <Event><![CDATA[CLICK]]></Event>
-    <EventKey><![CDATA[quotation]]></EventKey>
+    <EventKey><![CDATA[unknown]]></EventKey>
 </xml>';
 
 //<!-- 图片消息 -->
