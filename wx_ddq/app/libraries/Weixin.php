@@ -9,8 +9,6 @@ if (! defined('WEIXIN_ROOT')) {
 class Weixin {
     const RETURN_FAILED     = 'ggEwL0OuJOQ7OuBy';
 
-    //private static $queryLog = DATAPATH.'runtime/querylog.txt';
-
     private $appID          = 'wxfc4ad89f36beb189';
     private $appSecret      = '8de181c7b52dccd13087adb97b9620f0';
     private $encodingAESKey = 'saFkURTUS05TFJti201a3L5HI3c897jm4qXNhYD9i3W';

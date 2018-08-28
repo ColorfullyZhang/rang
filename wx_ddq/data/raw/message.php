@@ -3,10 +3,10 @@ class AAA {
 //<!-- 文本消息 -->
 public static $xml01 = '<xml>
     <ToUserName><![CDATA[toUser_01]]></ToUserName>
-    <FromUserName><![CDATA[fromUser_011]]></FromUserName>
+    <FromUserName><![CDATA[fromUser_01]]></FromUserName>
     <CreateTime>1348831860</CreateTime>
     <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[徐飞]]></Content>
+    <Content><![CDATA[durban]]></Content>
     <MsgId>1234567890123456</MsgId>
 </xml>';
 
@@ -14,11 +14,11 @@ public static $xml01 = '<xml>
 //<!-- landmark quotation customer contact staff unknown -->
 public static $xml16 = '<xml>
     <ToUserName><![CDATA[toUser_16]]></ToUserName>
-    <FromUserName><![CDATA[fromUser_011]]></FromUserName>
+    <FromUserName><![CDATA[fromUser_01]]></FromUserName>
     <CreateTime>123456789</CreateTime>
     <MsgType><![CDATA[event]]></MsgType>
     <Event><![CDATA[CLICK]]></Event>
-    <EventKey><![CDATA[unknown]]></EventKey>
+    <EventKey><![CDATA[quotation]]></EventKey>
 </xml>';
 
 //<!-- 图片消息 -->

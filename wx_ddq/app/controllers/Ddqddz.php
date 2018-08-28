@@ -53,8 +53,7 @@ class Ddqddz extends CI_Controller {
                     break;
                 default:
                     log_message('info', '>>> '.__METHOD__.'() logs: Unsupport EventKey: '.$this->weixin->message->getEventKey().' received');
-                    $this->weixin->responseSuccess();
-                    $response = '菜单已更新';
+                    $this->weixin->responseSuccess(TRUE);
                     break;
                 }
                 break;
@@ -110,22 +109,12 @@ class Ddqddz extends CI_Controller {
             log_message('info', 'Content: '.$this->weixin->message->getContent());
             log_message('info', 'MsgId: '.$this->weixin->message->getMsgId());
 
-            $this->weixin->message->setResponseMsgType(WeixinMessage::MSGTYPE_TEXT);
-            /**
-            * $queryLogData = array(
-            *     'time'      => 'xxxx-xx-xx xx:xx:xx',
-            *     'queryType' => 'landmark',
-            *     'dest'      => 'dar es salaam',
-            *     'shipOwner' => array('msk', 'saf'),
-            *     'container' => array('20g', '40g')
-            * );
-            */
-            $queryLogData = $this->getQueryType($this->weixin->message->getFromUserName());
-            if (is_null($queryLogData)) {
+            $userData = $this->getQueryType($this->weixin->message->getFromUserName());
+            if (is_null($userData)) {
                 $response = '请先选择查询类型';
                 break;
             }
-            $queryType = $queryLogData['queryType'];
+            $queryType = $userData['queryType'];
             $content   = $this->weixin->message->getContent();
             $this->load->library('exceldata');
             if (! $this->exceldata->canUse()) {
@@ -179,17 +168,34 @@ class Ddqddz extends CI_Controller {
                 }
                 break;
             case Exceldata::QUERY_QUOTATION:
-                // parse $content
-                // $response = $this->exceldata->Quote($content);
-                if (gettype($data) == 'string') {
-                    $response = $data;
-                } else if (gettype($data) == 'array') {
-                    $response = $this->parser->parse('quote', $data, TRUE);
+                $condition = $this->exceldata->parseQueryString($content);
+                if (count($condition) > 0) {
+                    if (array_key_exists('dest', $condition)) {
+                        $userData['dest'] = $condition['dest'];
+                        $userData['shipOwner'] = NULL;
+                        $userData['container'] = NULL;
+                    }
+                    if (array_key_exists('shipOwner', $condition)) {
+                        $userData['shipOwner'] = $condition['shipOwner'];
+                    }
+                    if (array_key_exists('container', $condition)) {
+                        $userData['container'] = $condition['container'];
+                    }
+                    $this->saveQueryType($this->weixin->message->getFromUserName(), $userData);
+                }
+
+                unset($condition['time']);
+                unset($condition['queryType']);
+                $result = $this->exceldata->Quote($condition);
+
+                if (gettype($result) == 'string') {
+                    $response = $result;
+                } else if (gettype($result) == 'array') {
+                    $response = $this->parser->parse('quote', $result, TRUE);
                 } else {
                     log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:quote()');
                     $response = '查询功能暂不可用';
                 }
-                $response = 'Not implemented';
                 break;
             default:
                 $response = '未知查询类型';
@@ -215,8 +221,12 @@ class Ddqddz extends CI_Controller {
 
     private function saveQueryType($userName, $data) {
         $this->load->library('exceldata');
+        if (! array_key_exists('queryType', $data)) {
+            log_message('info', '>>> '.__METHOD__.'() logs: queryType required');
+            return FALSE;
+        }
         if (! in_array($data['queryType'], Exceldata::$queryTypes)) {
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$data['queryType']}");
+            log_message('info', '>>> '.__METHOD__.'() logs: Invalid queryType:'.$data['queryType']);
             return FALSE;
         }
         $this->load->helper('file');
@@ -227,57 +237,12 @@ class Ddqddz extends CI_Controller {
             $queryLogData = array();
         }
         unset($queryLogData[$userName]);
-        $queryLogData[$userName] = array(
-            'time'      => date('Y-m-d H:i:s'),
-            'queryType' => $data['queryType'],
-        );
-        // if ($data['queryType'] = Exceldata::QUERY_LANDMARK) {
-        //     $queryLogData[$userName] = array(
-        //         'dest'      => isset($data['dest']) ? $data['dest'] : NULL,
-        //         'shipOwner' => isset($data['shipOwner']) ? $data['shipOwner'] : NULL,
-        //         'container' => isset($data['container']) ? $data['container'] : NULL
-        //     );
-        // }
+        $data = array_merge(array('time' => date('Y-m-d H:i:s')), $data);
+        $queryLogData[$userName] = $data;
         write_file(self::$queryLog, json_encode($queryLogData));
         return TRUE;
     }
     
-    private function saveQuoteCondition($userName, $data) {
-        $this->load->library('exceldata');
-        if (! in_array($data['queryType'], Exceldata::$queryTypes)) {
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid query type: {$data['queryType']}");
-            return FALSE;
-        }
-        $this->load->helper('file');
-        if (! file_exists(self::$queryLog) ) {
-            touch(self::$queryLog);
-        }
-        if (($queryLogData = json_decode(file_get_contents(self::$queryLog), TRUE)) === NULL) {
-            $queryLogData = array();
-        }
-        if (! array_key_exists($userName, $queryLogData) OR $queryLogData['queryType'] != Exceldata::QUERY_QUOTATION) {
-            return FALSE;
-        }
-        $userData = $queryLogData[$username];
-        unset($queryLogData[$userName]);
-        
-        switch (TRUE) {
-        case array_key_exists('dest', $data):
-            $userData['dest'] = $data['dest'];
-            break;
-        case array_key_exists('shipOwner', $data):
-            $userData['shipOwner'] = $data['shipOwner'];
-            break;
-        case array_key_exists('container', $data):
-            $userData['container'] = $data['container'];
-            break;
-        }
-        $userData['time'] = date('Y-m-d H:i:s');
-        $queryLogData[$userName] = $userData;
-        write_file(self::$queryLog, json_encode($queryLogData));
-        return TRUE;
-    }
-
     private function getQueryType($userName) {
         $this->load->helper('file');
         if (! file_exists(self::$queryLog) ) {

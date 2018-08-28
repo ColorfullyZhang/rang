@@ -19,16 +19,16 @@ class Exceldata {
         'OOCL', 'PIL', 'RCL', 'SAF', 'SCI', 'SMDL', 'TS', 'UASC', 'WHL', 'YML', 'ZIM'
     );
     public static $containerTypes = array(
-        '20' => '20GP', '20G' => '20GP', '20GP' => '20GP',
-        '40' => '40GP', '40G' => '40GP', '40GP' => '40GP',
-        '40H' => '40HQ', '40HQ' => '40HQ', '40HC' => '40HQ'
+        '20' => '20G', '20G' => '20G', '20GP' => '20G',
+        '40' => '40G', '40G' => '40G', '40GP' => '40G',
+        '40H' => '40H', '40HQ' => '40H', '40HC' => '40H'
     );
 
     private $excel;
     private $status;
 
     protected $CI;
-    
+
     public function __construct() {
         $file = DATAPATH.'raw/Africa_data.xlsx';
         if (! file_exists($file)) {
@@ -43,6 +43,39 @@ class Exceldata {
             $this->excel = $reader->load($file);
             $this->status = TRUE;
         }
+    }
+
+    public function parseQueryString($content) {
+        $exploded = explode(' ', strtoupper(preg_replace('/\s+/', ' ', trim($content))));
+        $data = array();
+        for ($i = 0; $i < count($exploded); $i++) {
+            if (in_array($exploded[$i], self::$shipOwners)) {
+                $data['shipOwner'][] = $exploded[$i];
+            } else if (array_key_exists($exploded[$i], self::$containerTypes)) {
+                $data['container'] = self::$containerTypes[$exploded[$i]];
+            } else {
+                break;
+            }
+            $exploded[$i] = '';
+        }
+        for ($j = count($exploded) -1 ; $j > $i; $j--) {
+            if (in_array($exploded[$j], self::$shipOwners)) {
+                $data['shipOwner'][] = $exploded[$j];
+            } else if (array_key_exists($exploded[$j], self::$containerTypes)) {
+                $data['container'] = self::$containerTypes[$exploded[$j]];
+            } else {
+                break;
+            }
+            $exploded[$j] = '';
+        }
+        if (array_key_exists('shipOwner', $data)) {
+            $data['shipOwner'] = array_unique($data['shipOwner']);
+        }
+        $data['dest'] = trim(implode(' ', $exploded));
+        if (strlen($data['dest']) == 0 ) {
+            unset($data['dest']);
+        }
+        return $data;
     }
 
     public function canUse() {
@@ -108,15 +141,20 @@ class Exceldata {
         //return $this->CI->parser->parse('customer', $data, TRUE);
     }
 
-    public function quote($queryString = NULL) {
-        $dest = NULL;
-        $shipOwner = NULL;
-        $sortCTN = '20G';
-        if (is_null($dest)) {
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid destination: {$dest}");
-            return '查询出错';
+    public function quote($condition = array()) {
+        if (! is_array($condition)) {
+            log_message('info', '>>> '.__METHOD__."() logs: invalid parameter");
+            return '查询暂不可用';
         }
-        $dest = strtolower(trim($dest));
+        $dest      = array_key_exists('dest', $condition) ? $condition['dest'] : NULL;
+        $shipOwner = array_key_exists('shipOwner', $condition) ? $condition['shipOwner'] : array();
+        $container = array_key_exists('container', $condition) ? $condition['container'] : NULL;
+        if (is_null($dest) OR $dest == '' OR ! is_array($shipOwner) OR
+            count($shipOwner) == 0 OR ! in_array($container, ['20G', '40G', '40H'])) {
+            log_message('info', '>>> '.__METHOD__."() logs: invalid quote condition");
+            return '查询暂不可用';
+        }
+        $dest = trim($dest);
         $this->excel->setActiveSheetIndexByName('Pricelist');
 
         $header = $this->excel->getActiveSheet()->rangeToArray(
@@ -136,15 +174,15 @@ class Exceldata {
         list($cDest, $cShipOwner, $cCTN20G, $cEBS20G, $cCTN40G, $cEBS40G,
             $cCTN40H, $cEBS40H, $cAMSENS, $cRemark1, $cRemark2, $cQuotation) =
             array('D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'AB', 'AC', 'AD');
-        $cPrice = $cCTN20G;
-        $cEBS = $cEBS20G;
+        $cPrice = $container == '20G' ? $cCTN20G : $container == '40G' ? $cCTN40G : $cCTN40H;
+        $cEBS = $container == '20G' ? $cEBS20G : $container == '40G' ? $cEBS40G : $cEBS40H;
         
         $sort = array();
         $data = array();
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if (strtolower(trim($activeSheet->getCell($cDest.$r)->getValue())) <> $dest) {
+            if (stripos($dest, trim($activeSheet->getCell($cDest.$r)->getValue())) !== 0) {
                 continue;
             }
             $sort[] = intval($activeSheet->getCell($cPrice.$r)->getValue()) +
@@ -155,7 +193,7 @@ class Exceldata {
             );
         }
         if (count($data) == 0) {
-            return '没有查到该报价：'.$queryString;
+            return '没有查到价格信息';
         }
         array_multisort($sort, $data['quotations']);
         return $data;
