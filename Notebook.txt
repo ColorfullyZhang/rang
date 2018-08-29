@@ -96,6 +96,7 @@ source .bashrc
 yum install gcc
 yum install libxml2 libxml2-devel
 ./configure --prefix=/usr/local/php --enable-mbstring --enable-fpm --enable-zip
+./configure --prefix=/usr/local/php --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-kerberos --with-libdir=lib64 --with-libxml-dir --with-MySQL --with-mysqli --with-openssl --with-pcre-regex --with-pdo-mysql --with-pdo-sqlite --with-pear --with-png-dir --with-xmlrpc --with-xsl --with-zlib --enable-fpm --enable-bcmath --enable-libxml --enable-inline-optimization --enable-gd-native-ttf --enable-mbregex --enable-mbstring --enable-opcache --enable-pcntl --enable-shmop --enable-soap --enable-sockets --enable-sysvsem --enable-xml --enable-zip
 make && make install
 make test
 
@@ -103,9 +104,29 @@ make test
     PATH=$PATH:/usr/local/php/bin
 source .bash_profile
 
-./configure --prefix=/usr/local/php --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-kerberos --with-libdir=lib64 --with-libxml-dir --with-MySQL --with-mysqli --with-openssl --with-pcre-regex --with-pdo-mysql --with-pdo-sqlite --with-pear --with-png-dir --with-xmlrpc --with-xsl --with-zlib --enable-fpm --enable-bcmath --enable-libxml --enable-inline-optimization --enable-gd-native-ttf --enable-mbregex --enable-mbstring --enable-opcache --enable-pcntl --enable-shmop --enable-soap --enable-sockets --enable-sysvsem --enable-xml --enable-zip
+cp php.ini /usr/local/php/lib/
+.bash_profile
+    PATH=$PATH:/usr/local/php/bin
+source .bash_profile
+
+upload wx_ddq
+chmod o+w wx_ddq/data/cache wx_ddq/data/logs wx_ddq/data/runtime
 
 -----------------------------------------------------------------------------------------------
+yum install pcre pcre-devel
+./configure
+make && make install
+
+.bash_profile
+    PATH=$PATH:/usr/local/nginx/sbin
+source .bash_profile
+
+-----------------------------------------------------------------------------------------------
+yum install net-tools
+ps -ef |grep nginx
+
+-----------------------------------------------------------------------------------------------
+
 # user  nobody;
 user             www;
 worker_processes 4;
