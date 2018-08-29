@@ -78,5 +78,92 @@ ENS 船开前四天截
 慧吉 赵 18001989265
 慧吉 65352037/65359265/65454079/65866470/18001989265/13816295885/13331901002
 
+-----------------------------------------------------------------------------------------------
 ssh root@118.24.10.231
-ftp ftp_rang
+
+-----------------------------------------------------------------------------------------------
+VBoxManage.exe list vms
+VBoxManage.exe startvm centos-minimal –type headless
+
+-----------------------------------------------------------------------------------------------
+yum install vim
+mv upload/.vimrc ./
+.bashrc
+    alias vi='vim'
+source .bashrc
+
+-----------------------------------------------------------------------------------------------
+yum install gcc
+yum install libxml2 libxml2-devel
+./configure --prefix=/usr/local/php --enable-mbstring --enable-fpm --enable-zip
+make && make install
+make test
+
+.bash_profile
+    PATH=$PATH:/usr/local/php/bin
+source .bash_profile
+
+./configure --prefix=/usr/local/php --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-kerberos --with-libdir=lib64 --with-libxml-dir --with-MySQL --with-mysqli --with-openssl --with-pcre-regex --with-pdo-mysql --with-pdo-sqlite --with-pear --with-png-dir --with-xmlrpc --with-xsl --with-zlib --enable-fpm --enable-bcmath --enable-libxml --enable-inline-optimization --enable-gd-native-ttf --enable-mbregex --enable-mbstring --enable-opcache --enable-pcntl --enable-shmop --enable-soap --enable-sockets --enable-sysvsem --enable-xml --enable-zip
+
+-----------------------------------------------------------------------------------------------
+# user  nobody;
+user             www;
+worker_processes 4;
+# error_log  logs/error.log;
+# error_log  logs/error.log  notice;
+# error_log  logs/error.log  info;
+# pid        logs/nginx.pid;
+events {
+  worker_connections 1024;
+}
+
+http {
+  include      mime.types;
+  default_type application/octet-stream;
+  log_format main '[$time_local] $remote_addr "$request" "$http_referer" '
+                  '"$http_user_agent" "$http_x_forwarded_for" $status $body_bytes_sent '
+                  '$upstream_addr $request_time	$upstream_response_time ';
+  access_log /app/nginx/logs/access.log main;
+  sendfile on;
+  # tcp_nopush     on;
+  # keepalive_timeout  0;
+  keepalive_timeout 65; 
+  #underscores_in_headers on;
+  # Proxy Settings
+  proxy_redirect             off;
+  proxy_set_header           Host            $host                     ;
+  proxy_set_header           X-Real-IP       $remote_addr              ;
+  proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_next_upstream        error timeout invalid_header http_500 http_502 http_503 http_504;
+  proxy_max_temp_file_size   0;
+  proxy_connect_timeout      90;
+  proxy_send_timeout         90;
+  proxy_read_timeout         90;
+  proxy_buffer_size          4k;
+  proxy_buffers              4 32k;
+  proxy_busy_buffers_size    64k;
+  proxy_temp_file_write_size 64k;
+  gzip on;
+  server {
+    listen      80;
+    server_name localhost;
+    location = /favicon.ico {
+      log_not_found off;
+      access_log    off;
+    }
+    location / {
+        root   html;
+        index  index.html index.htm;
+    }
+    location ~ .*\.php(\/.*)*$ {
+      root /app/wx_ddq/web_root;      
+      #root /app/php-work;
+      fastcgi_split_path_info ^(.+\.php)(/.+)$;
+      fastcgi_pass            unix:/var/run/php-fpm/php-fpm.sock;
+      fastcgi_index           index.php;
+      fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include                 fastcgi_params;
+    }
+  }
+  include vhost/*.conf;
+}
