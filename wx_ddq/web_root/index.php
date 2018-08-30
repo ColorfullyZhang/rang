@@ -24,6 +24,7 @@ switch (ENVIRONMENT) {
 $system_path = '../ci';
 $application_folder = '../app';
 $data_folder = '../data';
+$log_folder = '../logs';
 $view_folder = '';
 
 if (defined('STDIN')) {
@@ -78,6 +79,22 @@ if (is_dir($data_folder)) {
     exit(3);
 }
 define('DATAPATH', $data_folder.DIRECTORY_SEPARATOR);
+
+/* LOGPATH */
+if (is_dir($log_folder)) {
+    if (($_temp = realpath($log_folder)) !== FALSE) {
+        $log_folder = $_temp;
+    } else {
+        $log_folder = strtr(rtrim($log_folder, '/\\'), '/\\', DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR);
+    }
+} elseif (is_dir(BASEPATH.$log_folder.DIRECTORY_SEPARATOR)) {
+    $log_folder = BASEPATH.strtr(trim($log_folder, '/\\'), '/\\', DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR);
+} else {
+    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+    echo 'Your data folder path does not appear to be set correctly. Please open the following file and correct this: '.SELF;
+    exit(3);
+}
+define('LOGPATH', $log_folder.DIRECTORY_SEPARATOR);
 
 /* VIEWPATH */
 if ( ! isset($view_folder[0]) && is_dir(APPPATH.'views'.DIRECTORY_SEPARATOR)) {

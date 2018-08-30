@@ -86,11 +86,39 @@ VBoxManage.exe list vms
 VBoxManage.exe startvm centos-minimal –type headless
 
 -----------------------------------------------------------------------------------------------
+upload wx_ddq root@xxx.xxx.xxx.xxx:/
+chmod www.www /wx_ddq/data/cache /wx_ddq/data/runtime
+chown www.www /wx_ddq/logs/ci /wx_ddq/logs/nginx /wx_ddq/logs/php
+
+-----------------------------------------------------------------------------------------------
 yum install vim
-mv upload/.vimrc ./
+vi .vimrc
+    set nu
+    set expandtab
+    set ruler
+    set tabstop=4
+    set softtabstop=4
+    set shiftwidth=4
+    set ai
+    set si
+    set smarttab
+    set wrap
+    set lbr
+    set tw=0
+    set foldmethod=syntax
+    set incsearch
+    set laststatus=2
 .bashrc
     alias vi='vim'
 source .bashrc
+
+groupadd www
+useradd www -g www
+
+-----------------------------------------------------------------------------------------------
+yum install net-tools
+ps -ef
+netstat -tunlp
 
 -----------------------------------------------------------------------------------------------
 yum install gcc
@@ -102,89 +130,28 @@ make test
 
 .bash_profile
     PATH=$PATH:/usr/local/php/bin
+    PATH=$PATH:/usr/local/php/sbin
 source .bash_profile
 
-cp php.ini /usr/local/php/lib/
-.bash_profile
-    PATH=$PATH:/usr/local/php/bin
-source .bash_profile
-
-upload wx_ddq
-chmod o+w wx_ddq/data/cache wx_ddq/data/logs wx_ddq/data/runtime
+php-fpm -c /wx_ddq/data/conf_env/ -g /wx_ddq/logs/php/php-fpm.pid -t
+关闭 kill -INT `cat /wx_ddq/logs/php/php-fpm.pid`
+重启 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
+  或 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
 
 -----------------------------------------------------------------------------------------------
 yum install pcre pcre-devel
-./configure
+./configure -user=www -group=www -conf-path=/wx_ddq/data/conf/env/nginx.conf --pid-path=/wx_ddq/logs/nginx/nginx.pid
 make && make install
 
 .bash_profile
     PATH=$PATH:/usr/local/nginx/sbin
 source .bash_profile
 
------------------------------------------------------------------------------------------------
-yum install net-tools
-ps -ef |grep nginx
+nginx -t
+nginx -s reload
+
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+firewall-cmd --reload
+firewall-cmd --list-ports
 
 -----------------------------------------------------------------------------------------------
-
-# user  nobody;
-user             www;
-worker_processes 4;
-# error_log  logs/error.log;
-# error_log  logs/error.log  notice;
-# error_log  logs/error.log  info;
-# pid        logs/nginx.pid;
-events {
-  worker_connections 1024;
-}
-
-http {
-  include      mime.types;
-  default_type application/octet-stream;
-  log_format main '[$time_local] $remote_addr "$request" "$http_referer" '
-                  '"$http_user_agent" "$http_x_forwarded_for" $status $body_bytes_sent '
-                  '$upstream_addr $request_time	$upstream_response_time ';
-  access_log /app/nginx/logs/access.log main;
-  sendfile on;
-  # tcp_nopush     on;
-  # keepalive_timeout  0;
-  keepalive_timeout 65; 
-  #underscores_in_headers on;
-  # Proxy Settings
-  proxy_redirect             off;
-  proxy_set_header           Host            $host                     ;
-  proxy_set_header           X-Real-IP       $remote_addr              ;
-  proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_next_upstream        error timeout invalid_header http_500 http_502 http_503 http_504;
-  proxy_max_temp_file_size   0;
-  proxy_connect_timeout      90;
-  proxy_send_timeout         90;
-  proxy_read_timeout         90;
-  proxy_buffer_size          4k;
-  proxy_buffers              4 32k;
-  proxy_busy_buffers_size    64k;
-  proxy_temp_file_write_size 64k;
-  gzip on;
-  server {
-    listen      80;
-    server_name localhost;
-    location = /favicon.ico {
-      log_not_found off;
-      access_log    off;
-    }
-    location / {
-        root   html;
-        index  index.html index.htm;
-    }
-    location ~ .*\.php(\/.*)*$ {
-      root /app/wx_ddq/web_root;      
-      #root /app/php-work;
-      fastcgi_split_path_info ^(.+\.php)(/.+)$;
-      fastcgi_pass            unix:/var/run/php-fpm/php-fpm.sock;
-      fastcgi_index           index.php;
-      fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
-      include                 fastcgi_params;
-    }
-  }
-  include vhost/*.conf;
-}

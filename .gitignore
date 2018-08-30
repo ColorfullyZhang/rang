@@ -5,23 +5,17 @@
 /wx_ddq/ci/.htaccess
 /wx_ddq/app/.htaccess
 
-/wx_ddq/app/cache/*
-!/wx_ddq/app/cache/index.html
-
-/wx_ddq/app/logs/*
-!/wx_ddq/app/logs/index.html
-
 /wx_ddq/data/cache/*
-!/wx_ddq/app/cache/index.html
-
-/wx_ddq/data/logs/*
-!/wx_ddq/app/logs/index.html
+!/wx_ddq/data/cache/index.html
 
 /wx_ddq/data/raw/*
 !/wx_ddq/data/raw/index.html
 !/wx_ddq/data/raw/message.php
 
 /wx_ddq/data/runtime/*
-!/wx_ddq/app/runtime/index.html
+!/wx_ddq/data/runtime/index.html
+
+/wx_ddq/logs/*
+!/wx_ddq/logs/index.html
 
 /分工.jpg
