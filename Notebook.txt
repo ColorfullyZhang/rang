@@ -86,12 +86,21 @@ VBoxManage.exe list vms
 VBoxManage.exe startvm centos-minimal –type headless
 
 -----------------------------------------------------------------------------------------------
-upload wx_ddq root@xxx.xxx.xxx.xxx:/
-chmod www.www /wx_ddq/data/cache /wx_ddq/data/runtime
+groupadd www
+useradd www -g www
+
+-----------------------------------------------------------------------------------------------
+scp nginx-1.15.2.tar.gz root@xxx.xxx.xxx.xxx:/root/
+scp php-7.2.9.tar.gz root@xxx.xxx.xxx.xxx:/root/
+scp -r wx_ddq root@xxx.xxx.xxx.xxx:/
+chown www.www /wx_ddq/data/cache /wx_ddq/data/runtime
 chown www.www /wx_ddq/logs/ci /wx_ddq/logs/nginx /wx_ddq/logs/php
 
 -----------------------------------------------------------------------------------------------
 yum install vim
+.bashrc
+    alias vi='vim'
+source .bashrc
 vi .vimrc
     set nu
     set expandtab
@@ -105,15 +114,8 @@ vi .vimrc
     set wrap
     set lbr
     set tw=0
-    set foldmethod=syntax
     set incsearch
     set laststatus=2
-.bashrc
-    alias vi='vim'
-source .bashrc
-
-groupadd www
-useradd www -g www
 
 -----------------------------------------------------------------------------------------------
 yum install net-tools
@@ -133,14 +135,14 @@ make test
     PATH=$PATH:/usr/local/php/sbin
 source .bash_profile
 
-php-fpm -c /wx_ddq/data/conf_env/ -g /wx_ddq/logs/php/php-fpm.pid -t
+php-fpm -c /wx_ddq/data/conf_env/ -y /wx_ddq/data/conf_env/php-fpm.conf -g /wx_ddq/logs/php/php-fpm.pid -t
 关闭 kill -INT `cat /wx_ddq/logs/php/php-fpm.pid`
 重启 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
   或 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
 
 -----------------------------------------------------------------------------------------------
 yum install pcre pcre-devel
-./configure -user=www -group=www -conf-path=/wx_ddq/data/conf/env/nginx.conf --pid-path=/wx_ddq/logs/nginx/nginx.pid
+./configure --user=www --group=www --conf-path=/wx_ddq/data/conf_env/nginx.conf --pid-path=/wx_ddq/logs/nginx/nginx.pid
 make && make install
 
 .bash_profile
@@ -155,3 +157,4 @@ firewall-cmd --reload
 firewall-cmd --list-ports
 
 -----------------------------------------------------------------------------------------------
+ll logs/ci/*.log logs/nginx/*.log logs/php/*.log
