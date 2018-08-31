@@ -10,4 +10,9 @@ class Welcome extends CI_Controller {
             $this->load->view('welcome_message');
         }
 	}
+
+	public function test($a = 'Hello World!')
+	{
+        echo $a;
+	}
 }

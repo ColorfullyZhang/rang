@@ -24,14 +24,14 @@ class Weixin {
 
     public function checkSignature() {
         if ($this->CI->input->get('signature') === NULL) {
-            $this->message = new WeixinMessage(ENVIRONMENT == 'production');
             return FALSE;
         } else {
+            $this->message = new WeixinMessage(FALSE);
             $arr = array($this->token,
                          $this->CI->input->get('timestamp'),
                          $this->CI->input->get('nonce'));
             sort($arr, SORT_STRING);
-            if (sha1(implode($arr)) == $this->input->get('signature')) {
+            if (sha1(implode($arr)) == $this->CI->input->get('signature')) {
                 $this->sendResponse($this->CI->input->get('echostr'), TRUE);
                 log_message('info', '>>> Check signature successfully');
             } else {

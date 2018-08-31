@@ -151,7 +151,7 @@ source .bash_profile
 
 nginx -t
 nginx -s reload
-echo nginx>>/etc/rc.local
+echo /usr/local/nginx/sbin/nginx>>/etc/rc.local
 
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 firewall-cmd --reload
