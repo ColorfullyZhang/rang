@@ -86,13 +86,12 @@ VBoxManage.exe list vms
 VBoxManage.exe startvm centos-minimal –type headless
 
 -----------------------------------------------------------------------------------------------
-groupadd www
-useradd www -g www
+scp upload/*tar.gz root@xxx.xxx.xxx.xxx:/root/
+scp -r wx_ddq root@xxx.xxx.xxx.xxx:/
 
 -----------------------------------------------------------------------------------------------
-scp nginx-1.15.2.tar.gz root@xxx.xxx.xxx.xxx:/root/
-scp php-7.2.9.tar.gz root@xxx.xxx.xxx.xxx:/root/
-scp -r wx_ddq root@xxx.xxx.xxx.xxx:/
+groupadd www
+useradd www -g www
 chown www.www /wx_ddq/data/cache /wx_ddq/data/runtime
 chown www.www /wx_ddq/logs/ci /wx_ddq/logs/nginx /wx_ddq/logs/php
 
@@ -120,11 +119,11 @@ vi .vimrc
 -----------------------------------------------------------------------------------------------
 yum install net-tools
 ps -ef
+ps -aux
 netstat -tunlp
 
 -----------------------------------------------------------------------------------------------
-yum install gcc
-yum install libxml2 libxml2-devel
+yum install gcc libxml2 libxml2-devel
 ./configure --prefix=/usr/local/php --enable-mbstring --enable-fpm --enable-zip
 ./configure --prefix=/usr/local/php --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-kerberos --with-libdir=lib64 --with-libxml-dir --with-MySQL --with-mysqli --with-openssl --with-pcre-regex --with-pdo-mysql --with-pdo-sqlite --with-pear --with-png-dir --with-xmlrpc --with-xsl --with-zlib --enable-fpm --enable-bcmath --enable-libxml --enable-inline-optimization --enable-gd-native-ttf --enable-mbregex --enable-mbstring --enable-opcache --enable-pcntl --enable-shmop --enable-soap --enable-sockets --enable-sysvsem --enable-xml --enable-zip
 make && make install
@@ -136,9 +135,10 @@ make test
 source .bash_profile
 
 php-fpm -c /wx_ddq/data/conf_env/ -y /wx_ddq/data/conf_env/php-fpm.conf -g /wx_ddq/logs/php/php-fpm.pid -t
+echo /usr/local/php/sbin/php-fpm -c /wx_ddq/data/conf_env/ -y /wx_ddq/data/conf_env/php-fpm.conf -g /wx_ddq/logs/php/php-fpm.pid>>/etc/rc.local
+chmod u+x /etc/rc.local
 关闭 kill -INT `cat /wx_ddq/logs/php/php-fpm.pid`
 重启 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
-  或 kill -USR2 `cat /wx_ddq/logs/php/php-fpm.pid`
 
 -----------------------------------------------------------------------------------------------
 yum install pcre pcre-devel
@@ -151,6 +151,7 @@ source .bash_profile
 
 nginx -t
 nginx -s reload
+echo nginx>>/etc/rc.local
 
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 firewall-cmd --reload
