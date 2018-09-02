@@ -265,7 +265,6 @@ class WeixinMessage {
         case self::MSGTYPE_SHORTVIDEO:
         case self::MSGTYPE_VIDEO:
         case self::MSGTYPE_VOICE:
-        default:
             echo self::RAW_TEXT_SUCCESS;
             log_message('info', '>>> '.__METHOD__.'() logs: currently response \'success\'');
             return;
