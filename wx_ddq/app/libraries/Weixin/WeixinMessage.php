@@ -80,6 +80,11 @@ class WeixinMessage {
             $xml = $CI->input->raw_input_stream;
         }
 
+        if (strlen($xml) == 0) {
+            log_message('error', '>>> '.__METHOD__.'() logs: bad request without xml');
+            show_404();
+        }
+
         $dom = new DOMDocument();
         $dom->loadXML($xml);
         $this->toUserName   = $this->domElementValue($dom, 'ToUserName');
