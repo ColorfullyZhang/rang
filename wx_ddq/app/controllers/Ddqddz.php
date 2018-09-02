@@ -18,7 +18,6 @@ class Ddqddz extends CI_Controller {
     public function __construct() {
         parent::__construct();
 
-        $this->load->library('weixin/WeixinMessage');
         $this->load->library('weixin');
     }
     
@@ -73,7 +72,7 @@ class Ddqddz extends CI_Controller {
         case WeixinMessage::MSGTYPE_EVENT:
             switch ($this->weixin->message->getEvent()) {
             case WeixinMessage::EVENT_SUBSCRIBE:
-                $response = 'Welcome to ddqddz'.EOL.EOL.$this->weixin->getHelp();
+                $response = '欢迎关注！'.EOL.EOL.$this->weixin->getHelp();
                 break;
             case WeixinMessage::EVENT_UNSUBSCRIBE:
                 $this->weixin->responseSuccess(TRUE);
@@ -120,6 +119,7 @@ class Ddqddz extends CI_Controller {
 
             switch ($this->weixin->message->getContent()) {
             case '?':
+            case '？':
                 $response = $this->weixin->getHelp();
                 break 2;
             case '1':
@@ -245,7 +245,6 @@ class Ddqddz extends CI_Controller {
 
     public function index_weixin() {
         is_cli() && exit('cli forbidden');
-        $this->load->library('Weixin/WeixinMessage');
 
         if ($this->weixin->checkSignature()) {
             return;
