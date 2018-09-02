@@ -2,6 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class WeixinMessage {
+    const MSGTYPE_RAW_TEXT   = 'raw_text';
     const MSGTYPE_EVENT      = 'event';
     const MSGTYPE_IMAGE      = 'image';
     const MSGTYPE_LINK       = 'link';
@@ -32,223 +33,226 @@ class WeixinMessage {
     const EVENT_SUBSCRIBE   = 'subscribe';
     const EVENT_UNSUBSCRIBE = 'unsubscribe';
     const EVENT_VIEW        = 'view';
+    
+    private static $events = array(
+        self::EVENT_CLICK,
+        self::EVENT_LOCATION,
+        self::EVENT_SCAN,
+        self::EVENT_SUBSCRIBE,
+        self::EVENT_UNSUBSCRIBE,
+        self::EVENT_VIEW
+    );
 
     private $toUserName;
     private $fromUserName;
     private $createTime;
     private $msgType         = NULL;
     private $message         = array();
-    private $responseMessage = array();
 
     private static $responseMsgTypes = array(
+        self::MSGTYPE_RAW_TEXT,
         self::MSGTYPE_IMAGE,
         self::MSGTYPE_MUSIC,
         self::MSGTYPE_NEWS,
-        self::MSGTYPE_VIDEO,
-        self::MSGTYPE_VOICE,
         self::MSGTYPE_TEXT,
-        'text'
+        self::MSGTYPE_VIDEO,
+        self::MSGTYPE_VOICE
     );
     private $responseMsgType = self::MSGTYPE_TEXT;
+    const RAW_TEXT_SUCCESS   = 'success';
+    private $responseMessage = array();
 
-    public function __construct($loadMessage = TRUE) {
-        if ($loadMessage) {
-            $this->loadMessage();
-        }
+    public function __construct() {
     }
 
-    private function domValue(&$dom, $key) {
+    private function domElementValue(&$dom, $key) {
         return $dom->getElementsByTagName($key)->item(0)->nodeValue;
     }
    
     public function loadMessage($xml = NULL) {
+        if ($xml !== NULL && ENVIRONMENT == 'production') {
+            log_message('error', '>>> '.__METHOD__.'() logs: $xml cannot be set manually in production');
+            $this->responseSuccess(TRUE);
+        }
         libxml_disable_entity_loader(TRUE);
         if (is_null($xml)) {
-            $xml = file_get_contents('php://input');
+            $CI =& get_instance();
+            $xml = $CI->input->raw_input_stream;
         }
 
         $dom = new DOMDocument();
         $dom->loadXML($xml);
-        $this->toUserName   = $this->domValue($dom, 'ToUserName');
-        $this->fromUserName = $this->domValue($dom, 'FromUserName');
-        $this->createTime   = $this->domValue($dom, 'CreateTime');
-        $this->setMsgType($this->domValue($dom, 'MsgType'));
+        $this->toUserName   = $this->domElementValue($dom, 'ToUserName');
+        $this->fromUserName = $this->domElementValue($dom, 'FromUserName');
+        $this->createTime   = $this->domElementValue($dom, 'CreateTime');
+        $this->setMsgType($this->domElementValue($dom, 'MsgType'));
+        log_message('info', '>>> '.__METHOD__.'() logs: message type: '.$this->msgType.' received');
 
         switch ($this->msgType) {
         case self::MSGTYPE_TEXT:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_TEXT.' received');
             $this->message = array(
-                'content' => $this->domValue($dom, 'Content'),
-                'msgId'   => $this->domValue($dom, 'MsgId')
+                'content' => $this->domElementValue($dom, 'Content'),
+                'msgId'   => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_IMAGE:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_IMAGE.' received');
             $this->message = array(
-                'picUrl'  => $this->domValue($dom, 'PicUrl'),
-                'mediaId' => $this->domValue($dom, 'MediaId'),
-                'msgId'   => $this->domValue($dom, 'MsgId')
+                'picUrl'  => $this->domElementValue($dom, 'PicUrl'),
+                'mediaId' => $this->domElementValue($dom, 'MediaId'),
+                'msgId'   => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_VOICE:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_VOICE.' received');
             $this->message = array(
-                'format'  => $this->domValue($dom, 'Format'),
-                'mediaId' => $this->domValue($dom, 'MediaId'),
-                'msgId'   => $this->domValue($dom, 'MsgId')
+                'format'  => $this->domElementValue($dom, 'Format'),
+                'mediaId' => $this->domElementValue($dom, 'MediaId'),
+                'msgId'   => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_VIDEO:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_VIDEO.' received');
             $this->message = array(
-                'thumbMediaId'  => $this->domValue($dom, 'ThumbMediaId'),
-                'mediaId'       => $this->domValue($dom, 'MediaId'),
-                'msgId'         => $this->domValue($dom, 'MsgId')
+                'thumbMediaId'  => $this->domElementValue($dom, 'ThumbMediaId'),
+                'mediaId'       => $this->domElementValue($dom, 'MediaId'),
+                'msgId'         => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_SHORTVIDEO:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_SHORTVIDEO.' received');
             $this->message = array(
-                'thumbMediaId'  => $this->domValue($dom, 'ThumbMediaId'),
-                'mediaId'       => $this->domValue($dom, 'MediaId'),
-                'msgId'         => $this->domValue($dom, 'MsgId')
+                'thumbMediaId'  => $this->domElementValue($dom, 'ThumbMediaId'),
+                'mediaId'       => $this->domElementValue($dom, 'MediaId'),
+                'msgId'         => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_LOCATION:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_LOCATION.' received');
             $this->message = array(
-                'locationX' => $this->domValue($dom, 'Location_X'),
-                'locationY' => $this->domValue($dom, 'Location_Y'),
-                'scale'     => $this->domValue($dom, 'Scale'),
-                'label'     => $this->domValue($dom, 'Label'),
-                'msgId'     => $this->domValue($dom, 'MsgId')
+                'locationX' => $this->domElementValue($dom, 'Location_X'),
+                'locationY' => $this->domElementValue($dom, 'Location_Y'),
+                'scale'     => $this->domElementValue($dom, 'Scale'),
+                'label'     => $this->domElementValue($dom, 'Label'),
+                'msgId'     => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_LINK:
-            log_message('info', '>>> '.__METHOD__.'() logs: Message type: '.self::MSGTYPE_LINK.' received');
             $this->message = array(
-                'title'       => $this->domValue($dom, 'Title'),
-                'description' => $this->domValue($dom, 'Description'),
-                'url'         => $this->domValue($dom, 'Url'),
-                'msgId'       => $this->domValue($dom, 'MsgId')
+                'title'       => $this->domElementValue($dom, 'Title'),
+                'description' => $this->domElementValue($dom, 'Description'),
+                'url'         => $this->domElementValue($dom, 'Url'),
+                'msgId'       => $this->domElementValue($dom, 'MsgId')
             );
             break;
         case self::MSGTYPE_EVENT:
-            $this->message['event'] = strtolower($this->domValue($dom, 'Event'));
+            $this->setEvent(strtolower(trim($this->domElementValue($dom, 'Event'))));
+            log_message('info', '>>> '.__METHOD__.'() logs: Event: '.$this->getEvent());
             switch ($this->getEvent()) {
             case self::EVENT_SUBSCRIBE:
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
+                break;
+            case self::EVENT_LOCATION:
+                log_message('info', '>>> '.__METHOD__.'() logs: not implemented');
                 break;
             case self::EVENT_CLICK:
-                $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
-                log_message('info', '>>> '.__METHOD__."() logs: Event:{$this->getEvent()}:{$this->getEventKey()} received");
-                break;
-            case self::EVENT_UNSUBSCRIBE:
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
+                $this->message['eventKey'] = $this->domElementValue($dom, 'EventKey');
+                log_message('info', '>>> '.__METHOD__.'() logs: EventKey: '.$this->message['eventKey']);
                 break;
             case self::EVENT_VIEW:
-                $this->message['eventKey'] = $this->domValue($dom, 'EventKey');
-                log_message('info', '>>> '.__METHOD__."() logs: Event: {$this->getEvent()} received");
+                $this->message['eventKey'] = $this->domElementValue($dom, 'EventKey');
+                break;
+            case self::EVENT_UNSUBSCRIBE:
                 break;
             default:
-                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->getEvent()} received");
+                log_message('error', '>>> '.__METHOD__.'() logs: not implemented event or unknown event or event not set yet');
             }
             break;
         case self::MSGTYPE_MUSIC:
         case self::MSGTYPE_NEWS:
-            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->getMsgType()} received");
             break;
         default:
-            $this->msgType = NULL;
-            log_message('info', '>>> '.__METHOD__."() logs: Invalid message type: {$this->getMsgType()} received");
+            log_message('info', '>>> '.__METHOD__."() logs: unknown MsgType, message not loaded");
         }
-
-        return $this;
     }
 
     private function setMsgType($msgType) {
         if (! in_array($msgType, self::$msgTypes)) {
+            log_message('error', '>>> '.__METHOD__.'() logs: invalid MsgType:'.$msgType);
             $this->msgType = NULL;
         }
         $this->msgType = $msgType;
+        return $this;
     }
-
-    private function resetMsgType() {
-        $this->setMsgType(NULL);
-    }
-
-    public function setResponseMsgType($msgType = self::MSGTYPE_TEXT) {
-        if (in_array($msgType, self::$responseMsgTypes)) {
-            $this->responseMsgType = $msgType;
-            return TRUE;
-        } else {
-            log_message('error', '>>> '.__METHOD__."() logs: Invalid responseMsgType: {$msgType}!");
-            return FALSE;
+    
+    private function setEvent($event) {
+        if ($this->getMsgType() != self::MSGTYPE_EVENT) {
+            log_message('error', '>>> '.__METHOD__.'() logs: function available only if MsgType is: event');
+            return;
         }
+        if (! in_array($event, self::$events)) {
+            log_message('error', '>>> '.__METHOD__.'() logs: invalid event:'.$event);
+            $this->message['event'] = NULL;
+        }
+        $this->message['event'] = $event;
+        return $this;
     }
 
-    public function setResponseMessage($message = array()) {
+    public function setResponseMsgType($msgType) {
+        if (! in_array($msgType, self::$responseMsgTypes)) {
+            log_message('error', '>>> '.__METHOD__.'() logs: invalid responseMsgType:'.$msgType);
+            $this->responseMsgType = NULL;
+        }
+        $this->responseMsgType = $msgType;
+        return $this;
+    }
+
+    public function setResponseMessage($message) {
         if (is_string($message)) {
             $message = array(
-                'msgType' => self::MSGTYPE_TEXT,
                 'content' => $message
             );
         }
 
-        if (! is_array($message)) {
-            log_message('error', '>>> '.__METHOD__.'() logs: Invalid parameter type: '.gettype($message).' received!');
-            return FALSE;
-        }
-        if (isset($message['msgType'])) {
-            if (! $this->setResponseMsgType($message['msgType'])) {
-                return FALSE;
-            }
-            unset($message['msgType']);
-        }
         switch ($this->responseMsgType) {
+        case self::MSGTYPE_RAW_TEXT:
         case self::MSGTYPE_TEXT:
             if (isset($message['content'])) {
                 $this->responseMessage = $message;
             }
             break;
         case self::MSGTYPE_IMAGE:
-            break;
-        case self::MSGTYPE_VOICE:
-            break;
-        case self::MSGTYPE_VIDEO:
-            break;
         case self::MSGTYPE_MUSIC:
-            break;
         case self::MSGTYPE_NEWS:
-            break;
+        case self::MSGTYPE_VIDEO:
+        case self::MSGTYPE_VOICE:
+        default:
+            log_message('error', '>>> '.__METHOD__.'() logs: not implemented responseMsgType:'.$this->responseMsgType);
         }
-        return TRUE;
+        return $this;
     }
 
-    public function sendResponse($message = NULL, $echostr = FALSE) {
-        if ($echostr) {
-            echo $message;
-            return;
+    public function sendResponse($message = NULL) {
+        if ($message !== NULL) {
+            $this->setResponseMessage($message);
         }
- 
-        // 哪些情况直接回复success
-        if (! is_null($message) && ! $this->setResponseMessage($message)) {
-            return $this->responseSuccess();
-        }
-        switch ($this->msgType) {
+        // some received MsgType must be responsed like this...
+        switch ($this->getMsgType()) {
+        case self::MSGTYPE_TEXT:
+            break;
         case self::MSGTYPE_EVENT:
             switch ($this->getEvent()) {
-            case self::EVENT_UNSUBSCRIBE: // Always response success on receiving unsubscribe message
-                return $this->responseSuccess();
+            case self::EVENT_CLICK:
+            case self::EVENT_SUBSCRIBE:
+                break 2;
+            case self::EVENT_UNSUBSCRIBE:
+                echo self::RAW_TEXT_SUCCESS;
+                log_message('info', '>>> '.__METHOD__.'() logs: \'success\' responsed');
                 break;
             case self::EVENT_LOCATION:
             case self::EVENT_SCAN:
             case self::EVENT_VIEW:
-                log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported Event: {$this->message['event']}");
-                return $this->responseSuccess();
+            default:
+                echo self::RAW_TEXT_SUCCESS;
+                log_message('info', '>>> '.__METHOD__.'() logs: currently response \'success\'');
                 break;
             }
-            break;
+            return;
+        case self::MSGTYPE_IMAGE:
         case self::MSGTYPE_LINK:
         case self::MSGTYPE_LOCATION:
         case self::MSGTYPE_MUSIC:
@@ -256,10 +260,20 @@ class WeixinMessage {
         case self::MSGTYPE_SHORTVIDEO:
         case self::MSGTYPE_VIDEO:
         case self::MSGTYPE_VOICE:
-        case self::MSGTYPE_IMAGE:
-            log_message('info', '>>> '.__METHOD__."() logs: Currently unsupported message type: {$this->msgType}");
-            return $this->responseSuccess();
-            break;
+        default:
+            echo self::RAW_TEXT_SUCCESS;
+            log_message('info', '>>> '.__METHOD__.'() logs: currently response \'success\'');
+            return;
+        }
+
+        if ($this->responseMsgType == self::MSGTYPE_RAW_TEXT) {
+            if (!isset($this->responseMessage['content'])) {
+                log_message('error', '>>> '.__METHOD__.'() logs: response message content not set, success responsed');
+                $this->responseSuccess(TRUE);
+            }
+            log_message('info', '>>> '.__METHOD__.'() logs: response raw text:'.$this->responseMessage['content']);
+            echo $this->responseMessage['content'];
+            return;
         }
         
         $dom = new DOMDocument();
@@ -271,8 +285,8 @@ class WeixinMessage {
         switch ($this->responseMsgType) {
         case self::MSGTYPE_TEXT:
             if (! isset($this->responseMessage['content'])) {
-                log_message('info', '>>> '.__METHOD__.'() logs: "content" must be set before response text message');
-                return $this->responseSuccess();
+                log_message('error', '>>> '.__METHOD__.'() logs: response message content not set, success responsed');
+                $this->responseSuccess(TRUE);
             }
             $e->appendChild($dom->createElement('MsgType'))->appendChild($dom->createCDATASection($this->responseMsgType));
             $e->appendChild($dom->createElement('Content'))->appendChild($dom->createCDATASection($this->responseMessage['content']));
@@ -285,7 +299,6 @@ class WeixinMessage {
         $dom->appendChild($e);
         log_message('info', '>>> '.__METHOD__.'() logs: '.$this->responseMsgType.' message responsed');
         echo $dom->saveXML();
-        return;
     }
    
     public function getMsgType() {
@@ -314,10 +327,10 @@ class WeixinMessage {
 
     public function getEvent() {
         if ($this->getMsgType() != self::MSGTYPE_EVENT) {
-            log_message('info', '>>> '.__METHOD__.'() logs: Method cannot be called when message type is not '.self::MSGTYPE_EVENT);
-            return FALSE;
+            log_message('info', '>>> '.__METHOD__.'() logs: method available only if MsgType is: event');
+            return;
         }
-        return $this->message['event'];
+        return isset($this->message['event']) ? $this->message['event'] : NULL;
     }
 
     public function getEventKey() {
@@ -467,13 +480,9 @@ class WeixinMessage {
         }
         return $this->message['precision'];
     }
-    
-    // 当收到还不支持的信息时，只返回接收确认给微信服务器，对用户不予理会
+
     public function responseSuccess($exit = FALSE) {
-        log_message('info', '>>> "success" sent to Weixin server');
-        $this->sendResponse('success', TRUE);
-        if ($exit) {
-            exit;
-        }
+        $this->setResponseMsgType(self::MSGTYPE_RAW_TEXT)->sendResponse(self::RAW_TEXT_SUCCESS);
+        $exit && exit;
     }
 }

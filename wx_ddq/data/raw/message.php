@@ -6,7 +6,7 @@ public static $xml01 = '<xml>
     <FromUserName><![CDATA[fromUser_01]]></FromUserName>
     <CreateTime>1348831860</CreateTime>
     <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[durban]]></Content>
+    <Content><![CDATA[庄沁皓]]></Content>
     <MsgId>1234567890123456</MsgId>
 </xml>';
 

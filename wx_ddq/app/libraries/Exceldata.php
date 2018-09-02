@@ -7,7 +7,7 @@ class Exceldata {
     const QUERY_CONTACT   = 'contact';
     const QUERY_STAFF     = 'staff';
     const QUERY_QUOTATION = 'quotation';
-    public static $queryTypes = array(
+    private static $queryTypes = array(
         self::QUERY_LANDMARK,
         self::QUERY_CUSTOMER,
         self::QUERY_CONTACT,
