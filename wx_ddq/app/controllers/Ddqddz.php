@@ -72,7 +72,7 @@ class Ddqddz extends CI_Controller {
         case WeixinMessage::MSGTYPE_EVENT:
             switch ($this->weixin->message->getEvent()) {
             case WeixinMessage::EVENT_SUBSCRIBE:
-                $response = '欢迎关注！'.EOL.EOL.$this->weixin->getHelp();
+                $response = '欢迎关注！'.PHP_EOL.PHP_EOL.$this->weixin->getHelp();
                 break;
             case WeixinMessage::EVENT_UNSUBSCRIBE:
                 $this->weixin->responseSuccess(TRUE);

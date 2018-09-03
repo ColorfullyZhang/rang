@@ -217,6 +217,7 @@ class WeixinMessage {
         case self::MSGTYPE_RAW_TEXT:
         case self::MSGTYPE_TEXT:
             if (isset($message['content'])) {
+                $message['content'] = trim($message['content']);
                 $this->responseMessage = $message;
             }
             break;

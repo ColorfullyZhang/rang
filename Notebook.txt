@@ -79,7 +79,8 @@ ENS 船开前四天截
 慧吉 65352037/65359265/65454079/65866470/18001989265/13816295885/13331901002
 
 -----------------------------------------------------------------------------------------------
-ssh root@118.24.10.231
+ssh root@106.15.198.159
+远程连接密码： 167018
 
 -----------------------------------------------------------------------------------------------
 VBoxManage.exe list vms
@@ -88,6 +89,11 @@ VBoxManage.exe startvm centos-minimal –type headless
 -----------------------------------------------------------------------------------------------
 scp upload/*tar.gz root@xxx.xxx.xxx.xxx:/root/
 scp -r wx_ddq root@xxx.xxx.xxx.xxx:/
+mv wx_ddq /
+vi app/config/config.php
+    line 228: 4 >> 1
+vi app/config/weixin.php
+    weixin_encodingAESKey
 
 -----------------------------------------------------------------------------------------------
 groupadd www
@@ -153,6 +159,9 @@ nginx -t
 nginx -s reload
 echo /usr/local/nginx/sbin/nginx>>/etc/rc.local
 
+systemctl enable firewalld
+systemctl start firewalld
+systemctl status firewalld
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 firewall-cmd --reload
 firewall-cmd --list-ports

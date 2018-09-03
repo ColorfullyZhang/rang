@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $config['weixin_appID']          = 'wxfc4ad89f36beb189';
 $config['weixin_appSecret']      = '3df5deb997a99b594a61f54fc26b464f';
-$config['weixin_encodingAESKey'] = 'O42FcaDQlaFkqSZozjMeJxhQZSsOOKd88aFggiyE7Yn';
+$config['weixin_encodingAESKey'] = '';
 $config['weixin_token']          = 'ddqddz';
 
 $config['weixin_tokenFile']      = DATAPATH.'runtime/token.txt';
