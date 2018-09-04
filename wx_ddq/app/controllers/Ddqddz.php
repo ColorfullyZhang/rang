@@ -17,8 +17,7 @@ class Ddqddz extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
-
-        $this->load->library('weixin');
+        $this->load->driver('cache');
     }
     
     public function getaccesstoken() {
@@ -141,6 +140,8 @@ class Ddqddz extends CI_Controller {
             }
             $queryType = $userData['queryType'];
             $content   = $this->weixin->message->getContent();
+            include_once(APPPATH.'libraries/PHPExcel.php');
+            include_once(APPPATH.'libraries/Exceldata.php');
             if (($exceldata = $this->cache->apc->get('exceldata')) === FALSE) {
                 $this->load->library('exceldata');
                 $this->cache->apc->save('exceldata', $this->exceldata, 86400);
@@ -241,6 +242,7 @@ class Ddqddz extends CI_Controller {
     public function index_weixin() {
         is_cli() && exit('cli forbidden');
 
+        $this->load->library('weixin');
         if ($this->weixin->checkSignature()) {
             return;
         }
@@ -253,6 +255,7 @@ class Ddqddz extends CI_Controller {
     public function index_cli($index) {
         ! is_cli() && show_404();
         
+        $this->load->library('weixin');
         $xml = 'xml'.$index;
         include DATAPATH.'raw/message.php';
         $this->load->library('Weixin/WeixinMessage');
