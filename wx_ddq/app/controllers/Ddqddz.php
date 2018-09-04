@@ -23,15 +23,8 @@ class Ddqddz extends CI_Controller {
     
     public function getaccesstoken() {
         !is_cli() && exit('forbidden');
-
-        $this->load->config('weixin');
-        $this->load->helper('file');
-
-        if(! file_exists($this->config->item('weixin_tokenFile'))) {
-            touch($this->config->item('weixin_tokenFile'));
-        }
-        if (($token = json_decode(file_get_contents($this->config->item('weixin_tokenFile')), TRUE)) === NULL OR
-            $token['expires_in'] + strtotime($token['time']) - time() < 600) {
+        if (($token = $this->cache->apc->get('access_token')) === FALSE) {
+            $this->config->load('weixin');
             $url    = 'https://api.weixin.qq.com/cgi-bin/token?';
             $params = http_build_query(array(
                 'grant_type' => 'client_credential',
@@ -48,14 +41,11 @@ class Ddqddz extends CI_Controller {
             );
             $token = file_get_contents($url, FALSE, stream_context_create($opts));
              */
-            $token = json_decode(file_get_contents($url.$params), TRUE);
-            $token['time'] = date('Y-m-d H:i:s');
-            
-            write_file($this->config->item('weixin_tokenFile'), json_encode($token));
+            $token = json_decode(file_get_contents($url.$params), TRUE)['access_token'];
+            $this->cache->apc->set('access_token', $token, 5400);
         }
-        log_message('info', '>>> '.__METHOD__.'() logs: access_token: '.substr($token['access_token'], 0, 20).'...');
-        log_message('info', '>>> '.__METHOD__.'() logs: will expires in: '.intdiv($token['expires_in'] - time() + strtotime($token['time']), 60).'m');
-        return $token['access_token'];
+        log_message('info', '>>> '.__METHOD__.'() logs: access_token: '.substr($token, 0, 20).'...');
+        return $token;
     }
 
     public function uploadmenu() {
@@ -151,7 +141,12 @@ class Ddqddz extends CI_Controller {
             }
             $queryType = $userData['queryType'];
             $content   = $this->weixin->message->getContent();
-            $this->load->library('exceldata');
+            if (($exceldata = $this->cache->apc->get('exceldata')) === FALSE) {
+                $this->load->library('exceldata');
+                $this->cache->apc->save('exceldata', $this->exceldata, 86400);
+            } else {
+                $this->exceldata = $exceldata;
+            }
             if (! $this->exceldata->canUse()) {
                 $response = '查询功能暂不可用';
                 break;
@@ -275,31 +270,16 @@ class Ddqddz extends CI_Controller {
             log_message('info', '>>> '.__METHOD__.'() logs: Invalid queryType:'.$data['queryType']);
             return FALSE;
         }
-        $this->load->helper('file');
-        $this->config->load('weixin');
-        if (! file_exists($this->config->item('weixin_queryLog')) ) {
-            touch($this->config->item('weixin_queryLog'));
+        
+        if (($apcData = $this->cache->apc->get($userName)) === FALSE) {
+            $apcData = array();
         }
-        if (($queryLogData = json_decode(file_get_contents($this->config->item('weixin_queryLog')), TRUE)) === NULL) {
-            $queryLogData = array();
-        }
-        unset($queryLogData[$userName]);
-        $data = array_merge(array('time' => date('Y-m-d H:i:s')), $data);
-        $queryLogData[$userName] = $data;
-        write_file($this->config->item('weixin_queryLog'), json_encode($queryLogData));
-        return TRUE;
+        $data = array_merge($apcData, $data);
+        return $this->cache->apc->save($userName, $data, 600); // valid in 10 minutes
     }
-    
+
     private function getQueryType($userName) {
-        $this->load->helper('file');
-        $this->load->config('weixin');
-        if (! file_exists($this->config->item('weixin_queryLog')) ) {
-            touch($this->config->item('weixin_queryLog'));
-        }
-        if (($queryLogData = json_decode(file_get_contents($this->config->item('weixin_queryLog')), TRUE)) === NULL) {
-            $queryLogData = array();
-        }
-        return array_key_exists($userName, $queryLogData) ? $queryLogData[$userName] : NULL;
+        return ($apcData = $this->cache->apc->get($userName)) === FALSE ?  NULL : $apcData;
     }
     
     public function test() {

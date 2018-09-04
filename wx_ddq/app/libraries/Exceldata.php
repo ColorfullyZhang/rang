@@ -27,18 +27,15 @@ class Exceldata {
     private $excel;
     private $status;
 
-    protected $CI;
-
     public function __construct() {
         $file = DATAPATH.'raw/Africa_data.xlsx';
         if (! file_exists($file)) {
             log_message('info', '>>> '.__METHOD__.'() logs: Data file "'.$file.'" does not exist');
             $this->status = FALSE;
         } else {
-            $this->CI =& get_instance();
-
-            $this->CI->load->library('PHPExcel');
-		    $this->CI->load->library('PHPExcel/PHPExcel_IOFactory');
+            $CI =& get_instance();
+            $CI->load->library('PHPExcel');
+            $CI->load->library('PHPExcel/PHPExcel_IOFactory');
             $reader = PHPExcel_IOFactory::createReaderForFile($file);
             $this->excel = $reader->load($file);
             $this->status = TRUE;
