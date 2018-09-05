@@ -69,25 +69,24 @@ class Ddqddz extends CI_Controller {
             case WeixinMessage::EVENT_CLICK:
                 $this->weixin->responseSuccess(TRUE);
                 break;
-                $this->load->library('exceldata'); // 这里不应该用 Exceldata
                 switch ($this->weixin->message->getEventKey()) {
-                case Exceldata::QUERY_LANDMARK:
+                case self::QUERY_LANDMARK:
                     $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_LANDMARK));
                     $response = '请回复地标...';
                     break;
-                case Exceldata::QUERY_CUSTOMER:
+                case self::QUERY_CUSTOMER:
                     $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CUSTOMER));
                     $response = '请回复公司抬头...';
                     break;
-                case Exceldata::QUERY_CONTACT:
+                case self::QUERY_CONTACT:
                     $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CONTACT));
                     $response = '请回复客户姓名...';
                     break;
-                case Exceldata::QUERY_STAFF:
+                case self::QUERY_STAFF:
                     $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_STAFF));
                     $response = '请回复同事姓名...';
                     break;
-                case Exceldata::QUERY_QUOTATION:
+                case self::QUERY_QUOTATION:
                     $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
                     $response = '请回复目的港、船东和箱型...';
                     break;
@@ -154,7 +153,7 @@ class Ddqddz extends CI_Controller {
             }
 
             switch ($queryType) {
-            case Exceldata::QUERY_LANDMARK:
+            case self::QUERY_LANDMARK:
                 $data = $this->exceldata->landmark($content);
                 if (gettype($data) == 'string') {
                     $response = $data;
@@ -165,7 +164,7 @@ class Ddqddz extends CI_Controller {
                     $response = '查询功能暂不可用';
                 }
                 break;
-            case Exceldata::QUERY_CUSTOMER:
+            case self::QUERY_CUSTOMER:
                 $data = $this->exceldata->customer($content);
                 if (gettype($data) == 'string') {
                     $response = $data;
@@ -176,7 +175,7 @@ class Ddqddz extends CI_Controller {
                     $response = '查询功能暂不可用';
                 }
                 break;
-            case Exceldata::QUERY_CONTACT:
+            case self::QUERY_CONTACT:
                 $data = $this->exceldata->contact($content);
                 if (gettype($data) == 'string') {
                     $response = $data;
@@ -187,7 +186,7 @@ class Ddqddz extends CI_Controller {
                     $response = '查询功能暂不可用';
                 }
                 break;
-            case Exceldata::QUERY_STAFF:
+            case self::QUERY_STAFF:
                 $data = $this->exceldata->staff($content);
                 if (gettype($data) == 'string') {
                     $response = $data;
@@ -198,7 +197,7 @@ class Ddqddz extends CI_Controller {
                     $response = '查询功能暂不可用';
                 }
                 break;
-            case Exceldata::QUERY_QUOTATION:
+            case self::QUERY_QUOTATION:
                 $condition = $this->exceldata->parseQueryString($content);
                 if (count($condition) > 0) {
                     if (array_key_exists('dest', $condition)) {
@@ -252,7 +251,7 @@ class Ddqddz extends CI_Controller {
         $this->weixin->sendResponse($this->handleRequest());
     }
     
-    public function index_cli($index) {
+    public function index_cli($index = '01') {
         ! is_cli() && show_404();
         
         $this->load->library('weixin');
@@ -278,11 +277,16 @@ class Ddqddz extends CI_Controller {
             $apcData = array();
         }
         $data = array_merge($apcData, $data);
-        return $this->cache->apc->save($userName, $data, 600); // valid in 10 minutes
+        return $this->cache->apc->save($userName, $data, 720); // valid in 10 minutes
     }
 
     private function getQueryType($userName) {
-        return ($apcData = $this->cache->apc->get($userName)) === FALSE ?  NULL : $apcData;
+        $apcData = $this->cache->apc->get($userName);
+        if ($apcData === FALSE) {
+            return NULL;
+        }
+        $this->cache->apc->save($userName, $apcData, 720);
+        return $apcData;
     }
     
     public function test() {

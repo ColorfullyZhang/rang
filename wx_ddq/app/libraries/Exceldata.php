@@ -2,18 +2,6 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Exceldata {
-    const QUERY_LANDMARK  = 'landmark';
-    const QUERY_CUSTOMER  = 'customer';
-    const QUERY_CONTACT   = 'contact';
-    const QUERY_STAFF     = 'staff';
-    const QUERY_QUOTATION = 'quotation';
-    private static $queryTypes = array(
-        self::QUERY_LANDMARK,
-        self::QUERY_CUSTOMER,
-        self::QUERY_CONTACT,
-        self::QUERY_STAFF,
-        self::QUERY_QUOTATION
-    );
     public static $shipOwners = array('ANL', 'APL', 'BLINE', 'CMA', 'CNC', 'COSCO', 'EMC',
         'EMI', 'ESL', 'HBS', 'HMM', 'HPL', 'KMTC', 'MCC', 'MSC', 'MSK', 'NDS', 'ONE',
         'OOCL', 'PIL', 'RCL', 'SAF', 'SCI', 'SMDL', 'TS', 'UASC', 'WHL', 'YML', 'ZIM'
