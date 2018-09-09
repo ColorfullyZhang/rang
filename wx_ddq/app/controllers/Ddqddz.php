@@ -200,8 +200,9 @@ class Ddqddz extends CI_Controller {
             case self::QUERY_QUOTATION:
                 $condition = $this->exceldata->parseQueryString($content);
                 if (count($condition) > 0) {
+                    $userData = array();
                     if (array_key_exists('dest', $condition)) {
-                        $userData['dest'] = $condition['dest'];
+                        $userData['dest']      = $condition['dest'];
                         $userData['shipOwner'] = NULL;
                         $userData['container'] = NULL;
                     }
@@ -214,17 +215,21 @@ class Ddqddz extends CI_Controller {
                     $this->saveQueryType($this->weixin->message->getFromUserName(), $userData);
                 }
 
-                unset($condition['time']);
-                unset($condition['queryType']);
-                $result = $this->exceldata->Quote($condition);
+                $result = $this->exceldata->Quote($condition['dest']);
 
-                if (gettype($result) == 'string') {
-                    $response = $result;
-                } else if (gettype($result) == 'array') {
-                    $response = $this->parser->parse('quote', $result, TRUE);
+                if (is_string($result) && $result = 'too_many_result') {
+                    $response = '查询结果过多，请提供更详细的目的港信息！';
+                } else if (is_array($result) && count($result) > 0) {
+                    $dest  = array();
+                    $price = array();
+                    foreach ($result as $item) {
+                        $dest[]  = $item['dest'];
+                        $price[] = $item['ctn20g'] + $item['ebs20g'] + $item['amsens'];
+                    }
+                    array_multisort($dest, SORT_ASC, $price, SORT_ASC, $result);
+                    $response = $this->parser->parse('quote', array('ctnType' => 'ALL', 'items' => $result), TRUE);
                 } else {
-                    log_message('info', '>>> '.__METHOD__.'() logs: Invalid data returned from Exceldata:quote()');
-                    $response = '查询功能暂不可用';
+                    $response = '什么也没有找到';
                 }
                 break;
             default:

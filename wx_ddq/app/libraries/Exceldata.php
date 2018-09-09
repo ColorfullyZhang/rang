@@ -126,63 +126,61 @@ class Exceldata {
         //return $this->CI->parser->parse('customer', $data, TRUE);
     }
 
-    public function quote($condition = array()) {
-        if (! is_array($condition)) {
+    public function quote($dest) {
+        if (! is_string($dest) OR $dest === '') {
             log_message('info', '>>> '.__METHOD__."() logs: invalid parameter");
             return '查询暂不可用';
         }
-        $dest      = array_key_exists('dest', $condition) ? $condition['dest'] : NULL;
-        $shipOwner = array_key_exists('shipOwner', $condition) ? $condition['shipOwner'] : array();
-        $container = array_key_exists('container', $condition) ? $condition['container'] : NULL;
-        if (is_null($dest) OR $dest == '' OR ! is_array($shipOwner) OR
-            count($shipOwner) == 0 OR ! in_array($container, ['20G', '40G', '40H'])) {
-            log_message('info', '>>> '.__METHOD__."() logs: invalid quote condition");
-            return '查询暂不可用';
-        }
-        $dest = trim($dest);
-        $this->excel->setActiveSheetIndexByName('Pricelist');
-
-        $header = $this->excel->getActiveSheet()->rangeToArray(
-            'A1:'.$this->excel->getActiveSheet()->getHighestColumn().'1')[0];
-        switch (TRUE) {
-            case $header[8]  <> '20G':
-            case $header[9]  <> 'E1':
-            case $header[10] <> '40G':
-            case $header[11] <> 'E2':
-            case $header[12] <> '40H':
-            case $header[13] <> 'E3':
-            case $header[14] <> 'AE':
-            case $header[29] <> '快捷报价':
-                return 'Table Structure Changed!';
-        }
-
-        list($cDest, $cShipOwner, $cCTN20G, $cEBS20G, $cCTN40G, $cEBS40G,
-            $cCTN40H, $cEBS40H, $cAMSENS, $cRemark1, $cRemark2, $cQuotation) =
-            array('D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'AB', 'AC', 'AD');
-        $cPrice = $container == '20G' ? $cCTN20G : $container == '40G' ? $cCTN40G : $cCTN40H;
-        $cEBS = $container == '20G' ? $cEBS20G : $container == '40G' ? $cEBS40G : $cEBS40H;
         
-        $sort = array();
-        $data = array();
+        $this->excel->setActiveSheetIndexByName('Pricelist');
         $activeSheet = $this->excel->getActiveSheet();
+
+        $header = $activeSheet->rangeToArray('A1:'.$activeSheet->getHighestColumn().'1')[0];
+        switch (FALSE) {
+            case $header[8]  == '20G':
+            case $header[9]  == 'E1':
+            case $header[10] == '40G':
+            case $header[11] == 'E2':
+            case $header[12] == '40H':
+            case $header[13] == 'E3':
+            case $header[14] == 'AE':
+                log_message('info', '>>> '.__METHOD__."() logs: table structure changed!");
+                return '查询暂不可用';
+        }
+
+        list($cRegion, $cDest, $cShipOwner, $cCTN20G, $cEBS20G, $cCTN40G, $cEBS40G, $cCTN40H, $cEBS40H, $cAMSENS,
+            $cWeekday, $cLoadPort, $cTransitPort, $cDuration, $cStartDate, $cEndDate, $cMark1, $cMark2) =
+            array('C', 'D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'U', 'V', 'X', 'Y', 'Z', 'AA', 'AB', 'AC');
+
+        $data = array();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if (stripos($dest, trim($activeSheet->getCell($cDest.$r)->getValue())) !== 0) {
+            if (stripos(trim($activeSheet->getCell($cDest.$r)->getValue()), $dest) === FALSE)
                 continue;
-            }
-            $sort[] = intval($activeSheet->getCell($cPrice.$r)->getValue()) +
-                intval($activeSheet->getCell($cEBS.$r)->getValue()) +
-                intval($activeSheet->getCell($cAMSENS.$r)->getValue());
-            $data['quotations'][] = array(
-                'quotation' => $activeSheet->getCell($cQuotation.$r)->getValue()
+
+            $data[] = array(
+                'region'      => $activeSheet->getCell($cRegion.$r)->getValue(),
+                'dest'        => ucwords(strtolower(trim($activeSheet->getCell($cDest.$r)->getValue()))),
+                'shipOwner'   => $activeSheet->getCell($cShipOwner.$r)->getValue(),
+                'ctn20g'      => intval($activeSheet->getCell($cCTN20G.$r)->getValue()),
+                'ebs20g'      => intval($activeSheet->getCell($cEBS20G.$r)->getValue()),
+                'ctn40g'      => intval($activeSheet->getCell($cCTN40G.$r)->getValue()),
+                'ebs40g'      => intval($activeSheet->getCell($cEBS40G.$r)->getValue()),
+                'ctn40h'      => intval($activeSheet->getCell($cCTN40H.$r)->getValue()),
+                'ebs40h'      => intval($activeSheet->getCell($cEBS40H.$r)->getValue()),
+                'amsens'      => intval($activeSheet->getCell($cAMSENS.$r)->getValue()),
+                'weekday'     => trim($activeSheet->getCell($cWeekday.$r)->getValue()),
+                'loadPort'    => trim($activeSheet->getCell($cLoadPort.$r)->getValue()),
+                'transitPort' => trim($activeSheet->getCell($cTransitPort.$r)->getValue()),
+                'duration'    => trim($activeSheet->getCell($cDuration.$r)->getValue()),
+                'startDate'   => date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell($cStartDate.$r)->getValue())),
+                'endDate'     => date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell($cEndDate.$r)->getValue())),
+                'mark1'       => trim($activeSheet->getCell($cMark1.$r)->getValue()),
+                'mark2'       => trim($activeSheet->getCell($cMark2.$r)->getValue())
             );
+            if (count($data) > 11) return 'too_many_result';
         }
-        if (count($data) == 0) {
-            return '没有查到价格信息';
-        }
-        array_multisort($sort, $data['quotations']);
         return $data;
-        //return $this->CI->parser->parse('quote', $data, TRUE);
     }
 
     public function staff($staff = NULL) {
