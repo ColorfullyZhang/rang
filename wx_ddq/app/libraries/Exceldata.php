@@ -213,21 +213,26 @@ class Exceldata {
     public function contact($contact = NULL) {
         if (is_null($contact)) {
             log_message('info', '>>> '.__METHOD__."() logs: Invalid Contact: {$contact}");
-            return '查询出错';
+            return 'error';
         }
 
-        $this->excel->setActiveSheetIndexByName('Namecards');
+        $this->excel->setActiveSheetIndexByName('Contacts');
         $activeSheet = $this->excel->getActiveSheet();
+        if ($activeSheet->getCell('G1')->getValue() != '姓名') {
+            return 'Table structure changed';
+        }
+        
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('C'.$r)->getValue() == $contact) {
+            if ($activeSheet->getCell('G'.$r)->getValue() == $contact) {
                 $data = array(
                     'customer' => $activeSheet->getCell('B'.$r)->getValue(),
                     'contact'  => $contact,
-                    'pos'      => $activeSheet->getCell('D'.$r)->getValue(),
-                    'mob'      => $activeSheet->getCell('F'.$r)->getValue(),
-                    'tel'      => $activeSheet->getCell('G'.$r)->getValue(),
-                    'note'     => $activeSheet->getCell('H'.$r)->getValue()
+                    'namecard' => $activeSheet->getCell('F'.$r)->getValue(),
+                    'pos'      => $activeSheet->getCell('H'.$r)->getValue(),
+                    'mob'      => $activeSheet->getCell('I'.$r)->getValue(),
+                    'tel'      => $activeSheet->getCell('J'.$r)->getValue(),
+                    'note'     => $activeSheet->getCell('K'.$r)->getValue()
                 );
             }
         }
