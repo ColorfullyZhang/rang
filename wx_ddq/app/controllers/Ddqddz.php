@@ -71,23 +71,23 @@ class Ddqddz extends CI_Controller {
                 break;
                 switch ($this->weixin->message->getEventKey()) {
                 case self::QUERY_LANDMARK:
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_LANDMARK));
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_LANDMARK));
                     $response = '请回复地标...';
                     break;
                 case self::QUERY_CUSTOMER:
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CUSTOMER));
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CUSTOMER));
                     $response = '请回复公司抬头...';
                     break;
                 case self::QUERY_CONTACT:
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CONTACT));
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CONTACT));
                     $response = '请回复客户姓名...';
                     break;
                 case self::QUERY_STAFF:
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_STAFF));
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_STAFF));
                     $response = '请回复同事姓名...';
                     break;
                 case self::QUERY_QUOTATION:
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
                     $response = '请回复目的港、船东和箱型...';
                     break;
                 default:
@@ -103,7 +103,6 @@ class Ddqddz extends CI_Controller {
             break;
         case WeixinMessage::MSGTYPE_TEXT:
             log_message('info', 'Content: '.$this->weixin->message->getContent());
-            log_message('info', 'MsgId: '.$this->weixin->message->getMsgId());
 
             switch ($this->weixin->message->getContent()) {
             case '?':
@@ -111,42 +110,35 @@ class Ddqddz extends CI_Controller {
                 $response = $this->weixin->getHelp();
                 break 2;
             case '1':
-                $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_LANDMARK));
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_LANDMARK));
                 $response = '请回复地标...';
                 break 2;
             case '2':
-                $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CUSTOMER));
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CUSTOMER));
                 $response = '请回复公司抬头...';
                 break 2;
             case '3':
-                $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CONTACT));
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_CONTACT));
                 $response = '请回复客户姓名...';
                 break 2;
             case '4':
-                $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_STAFF));
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_STAFF));
                 $response = '请回复同事姓名...';
                 break 2;
             case '5':
-                $this->saveQueryType($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
                 $response = '请回复目的港、船东和箱型...';
                 break 2;
             }
 
-            $userData = $this->getQueryType($this->weixin->message->getFromUserName());
+            $userData = $this->getQueryData($this->weixin->message->getFromUserName());
             if (is_null($userData)) {
                 $response = '请先选择查询类型';
                 break;
             }
             $queryType = $userData['queryType'];
             $content   = $this->weixin->message->getContent();
-            include_once(APPPATH.'libraries/PHPExcel.php');
-            include_once(APPPATH.'libraries/Exceldata.php');
-            if (($exceldata = $this->cache->apc->get('exceldata')) === FALSE) {
-                $this->load->library('exceldata');
-                $this->cache->apc->save('exceldata', $this->exceldata, 86400);
-            } else {
-                $this->exceldata = $exceldata;
-            }
+            $this->load->library('exceldata');
             if (! $this->exceldata->canUse()) {
                 $response = '查询功能暂不可用';
                 break;
@@ -200,34 +192,45 @@ class Ddqddz extends CI_Controller {
             case self::QUERY_QUOTATION:
                 $condition = $this->exceldata->parseQueryString($content);
                 if (count($condition) > 0) {
-                    $userData = array();
                     if (array_key_exists('dest', $condition)) {
                         $userData['dest']      = $condition['dest'];
-                        $userData['shipOwner'] = NULL;
+                        $userData['shipOwner'] = array();
                         $userData['container'] = NULL;
                     }
-                    if (array_key_exists('shipOwner', $condition)) {
-                        $userData['shipOwner'] = $condition['shipOwner'];
-                    }
-                    if (array_key_exists('container', $condition)) {
-                        $userData['container'] = $condition['container'];
-                    }
-                    $this->saveQueryType($this->weixin->message->getFromUserName(), $userData);
+                    isset($condition['shipOwner']) && $userData['shipOwner'] = $condition['shipOwner'];
+                    isset($condition['container']) && $userData['container'] = $condition['container'];
+                    $this->saveQueryData($this->weixin->message->getFromUserName(), $userData);
+                }
+                if (!isset($userData['dest'])) {
+                    $response = '请输入目的港';
+                    break;
                 }
 
-                $result = $this->exceldata->Quote($condition['dest']);
+                $result = $this->exceldata->Quote($userData['dest']);
 
                 if (is_string($result) && $result = 'too_many_result') {
                     $response = '查询结果过多，请提供更详细的目的港信息！';
                 } else if (is_array($result) && count($result) > 0) {
-                    $dest  = array();
-                    $price = array();
+                    $sortDest  = array();
+                    $sortPrice = array();
+                    $cCtn = 'ctn'.(is_null($userData['container']) ? '20g' : strtolower($userData['container']));
+                    $cEBS = 'ebs'.(is_null($userData['container']) ? '20g' : strtolower($userData['container']));
                     foreach ($result as $item) {
-                        $dest[]  = $item['dest'];
-                        $price[] = $item['ctn20g'] + $item['ebs20g'] + $item['amsens'];
+                        $sortDest[]  = $item['dest'];
+                        $sortPrice[] = $item[$cCtn] + $item[$cEBS] + $item['amsens'];
                     }
-                    array_multisort($dest, SORT_ASC, $price, SORT_ASC, $result);
-                    $response = $this->parser->parse('quote', array('ctnType' => 'ALL', 'items' => $result), TRUE);
+                    array_multisort($sortDest, SORT_ASC, $sortPrice, SORT_ASC, $result);
+
+                    if (isset($userData['shipOwner']) && count($userData['shipOwner']) > 0 && isset($userData['container'])) {
+                        $response = $this->parser->parse(
+                            'quote', 
+                            array( 'ctnType'   => $userData['container'],
+                                   'shipOwner' => $userData['shipOwner'],
+                                   'items'     => $result),
+                            TRUE);
+                    } else {
+                        $response = $this->parser->parse('quote_summary', array('items' => $result), TRUE);
+                    }
                 } else {
                     $response = '什么也没有找到';
                 }
@@ -266,9 +269,10 @@ class Ddqddz extends CI_Controller {
         $this->weixin->message->loadMessage(AAA::$$xml);
         $this->weixin->message->setResponseMsgType(WeixinMessage::MSGTYPE_RAW_TEXT);
         $this->weixin->sendResponse($this->handleRequest());
+        echo EOL.round(memory_get_usage()/1048576,2).'M';
     }
 
-    private function saveQueryType($userName, $data) {
+    private function saveQueryData($userName, $data) {
         if (! array_key_exists('queryType', $data)) {
             log_message('info', '>>> '.__METHOD__.'() logs: queryType required');
             return FALSE;
@@ -278,16 +282,15 @@ class Ddqddz extends CI_Controller {
             return FALSE;
         }
         
-        if (($apcData = $this->cache->apc->get($userName)) === FALSE) {
-            $apcData = array();
-        }
-        $data = array_merge($apcData, $data);
+        //if (($apcData = $this->cache->apc->get($userName)) === FALSE) {
+        //    $apcData = array();
+        //}
+        //$data = array_merge($apcData, $data);
         return $this->cache->apc->save($userName, $data, 720); // valid in 10 minutes
     }
 
-    private function getQueryType($userName) {
-        $apcData = $this->cache->apc->get($userName);
-        if ($apcData === FALSE) {
+    private function getQueryData($userName) {
+        if (($apcData = $this->cache->apc->get($userName)) === FALSE) {
             return NULL;
         }
         $this->cache->apc->save($userName, $apcData, 720);

@@ -136,11 +136,12 @@ yum install m4 autoconf gcc libxml2 libxml2-devel openssl openssl-devel
 make && make install
 make test
 
-ln data/conf_env/php.ini /usr/local/php/lib/
+ln /wx_ddq/data/conf_env/php.ini /usr/local/php/lib/
 .bash_profile
     PATH=$PATH:/usr/local/php/bin
     PATH=$PATH:/usr/local/php/sbin
 source .bash_profile
+pecl channel-update pecl.php.net
 pecl install apcu
 
 php-fpm -c /wx_ddq/data/conf_env/ -y /wx_ddq/data/conf_env/php-fpm.conf -g /wx_ddq/logs/php/php-fpm.pid -t
@@ -155,7 +156,7 @@ yum install pcre pcre-devel
 ./configure --user=www --group=www --pid-path=/wx_ddq/logs/nginx/nginx.pid
 make && make install
 
-ln data/conf_env/nginx.conf /usr/local/nginx/conf/
+ln /wx_ddq/data/conf_env/nginx.conf /usr/local/nginx/conf/
 .bash_profile
     PATH=$PATH:/usr/local/nginx/sbin
 source .bash_profile

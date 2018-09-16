@@ -2,11 +2,13 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Exceldata {
-    public static $shipOwners = array('ANL', 'APL', 'BLINE', 'CMA', 'CNC', 'COSCO', 'EMC',
-        'EMI', 'ESL', 'HBS', 'HMM', 'HPL', 'KMTC', 'MCC', 'MSC', 'MSK', 'NDS', 'ONE',
-        'OOCL', 'PIL', 'RCL', 'SAF', 'SCI', 'SMDL', 'TS', 'UASC', 'WHL', 'YML', 'ZIM'
+    public static $shipOwners = array('ALLSHP', 'ANL', 'APL', 'BLINE', 'CMA', 'CNC',
+        'COSCO', 'EMC', 'EMI', 'ESL', 'HBS', 'HMM', 'HPL', 'KMTC', 'MCC', 'MSC', 'MSK',
+        'NDS', 'ONE', 'OOCL', 'PIL', 'RCL', 'SAF', 'SCI', 'SMDL', 'TS', 'UASC', 'WHL',
+        'YML', 'ZIM'
     );
     public static $containerTypes = array(
+        'ALLCTN' => 'ALLCTN',
         '20' => '20G', '20G' => '20G', '20GP' => '20G',
         '40' => '40G', '40G' => '40G', '40GP' => '40G',
         '40H' => '40H', '40HQ' => '40H', '40HC' => '40H'
@@ -23,9 +25,19 @@ class Exceldata {
         } else {
             $CI =& get_instance();
             $CI->load->library('PHPExcel');
-            $CI->load->library('PHPExcel/PHPExcel_IOFactory');
-            $reader = PHPExcel_IOFactory::createReaderForFile($file);
-            $this->excel = $reader->load($file);
+            
+            $filetime = filemtime($file);
+            if ($filetime == $CI->cache->apc->get('filetime')) {
+                $this->excel = $CI->cache->apc->get('exceldata');
+            }
+            if ($this->excel === FALSE) {
+                $CI->load->library('PHPExcel/PHPExcel_IOFactory');
+                $reader = PHPExcel_IOFactory::createReaderForFile($file);
+                $this->excel = $reader->load($file);
+
+                $CI->cache->apc->save('exceldata', $this->excel);
+                $CI->cache->apc->save('filetime', $filetime);
+            }
             $this->status = TRUE;
         }
     }
@@ -54,7 +66,11 @@ class Exceldata {
             $exploded[$j] = '';
         }
         if (array_key_exists('shipOwner', $data)) {
-            $data['shipOwner'] = array_unique($data['shipOwner']);
+            if (in_array('ALLSHP', $data['shipOwner'])) {
+                $data['shipOwner'] = array(self::$shipOwners['ALLSHP']);
+            } else {
+                $data['shipOwner'] = array_unique($data['shipOwner']);
+            }
         }
         $data['dest'] = trim(implode(' ', $exploded));
         if (strlen($data['dest']) == 0 ) {
@@ -198,8 +214,8 @@ class Exceldata {
                     'pos'   => $activeSheet->getCell('C'.$r)->getValue(),
                     'name'  => $activeSheet->getCell('D'.$r)->getValue(),
                     'tel'   => $activeSheet->getCell('G'.$r)->getValue(),
-                    'mob'   => $activeSheet->getCell('I'.$r)->getValue(),
-                    'email' => $activeSheet->getCell('J'.$r)->getValue()
+                    'mob'   => $activeSheet->getCell('H'.$r)->getValue(),
+                    'email' => $activeSheet->getCell('I'.$r)->getValue()
                 );
             }
         }
@@ -228,7 +244,7 @@ class Exceldata {
                 $data = array(
                     'customer' => $activeSheet->getCell('B'.$r)->getValue(),
                     'contact'  => $contact,
-                    'namecard' => $activeSheet->getCell('F'.$r)->getValue(),
+                    'namecard' => date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('F'.$r)->getValue())),
                     'pos'      => $activeSheet->getCell('H'.$r)->getValue(),
                     'mob'      => $activeSheet->getCell('I'.$r)->getValue(),
                     'tel'      => $activeSheet->getCell('J'.$r)->getValue(),
