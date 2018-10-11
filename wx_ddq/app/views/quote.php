@@ -4,21 +4,21 @@ foreach ($items as $item) {
     echo $item['dest'].' '.$item['shipOwner'].' USD';
     switch ($ctnType) {
         case '20G':
-            echo sprintf('%d', $item['ctn20g']);
-            echo $item['ebs20g'] == 0 ? '(含EBS)' : sprintf(' + EBS%d', $item['ebs20g']);
+            echo sprintf('%d', $item['ctn20g']).'/20GP';
+            echo $item['ebs20g'] == 0 ? ' (含EBS)' : sprintf(' + EBS%d', $item['ebs20g']);
             break;
         case '40G':
-            echo sprintf('%d', $item['ctn40g']);
-            echo $item['ebs40g'] == 0 ? '(含EBS)' : sprintf(' + EBS%d', $item['ebs40g']);
+            echo sprintf('%d', $item['ctn40g']).'/40GP';
+            echo $item['ebs40g'] == 0 ? ' (含EBS)' : sprintf(' + EBS%d', $item['ebs40g']);
             break;
         case '40H':
-            echo sprintf('%d', $item['ctn40h']);
-            echo $item['ebs40h'] == 0 ? '(含EBS)' : sprintf(' + EBS%d', $item['ebs40h']);
+            echo sprintf('%d', $item['ctn40h']).'/40HQ';
+            echo $item['ebs40h'] == 0 ? ' (含EBS)' : sprintf(' + EBS%d', $item['ebs40h']);
             break;
         case 'ALLCTN':
             echo sprintf('%d/%d', $item['ctn20g'], $item['ctn40g']);
             echo $item['ctn40g'] == $item['ctn40h'] ? '' : sprintf('/%d', $item['ctn40h']);
-            echo $item['ebs20g'] == 0 ? '(含EBS)' : sprintf(' + EBS%d/%d', $item['ebs20g'], $item['ebs40h']);
+            echo $item['ebs20g'] == 0 ? ' (含EBS)' : sprintf(' + EBS%d/%d', $item['ebs20g'], $item['ebs40h']);
             break;
     }
     $search  = array('东', '南', '西', '北');
