@@ -19,7 +19,7 @@ class Ddqddz extends CI_Controller {
         parent::__construct();
         $this->load->driver('cache');
     }
-    
+
     public function getaccesstoken() {
         !is_cli() && exit('forbidden');
         if (($token = $this->cache->apc->get('access_token')) === FALSE) {
@@ -54,7 +54,7 @@ class Ddqddz extends CI_Controller {
         $url  = 'https://api.weixin.qq.com/cgi-bin/menu/create?access_token='.$this->getaccesstoken();
         $menu = $this->config->item('weixin_menu');
     }
-    
+
     private function handleRequest() {
         $response = '';
         switch ($this->weixin->message->getMsgType()) {
@@ -223,7 +223,7 @@ class Ddqddz extends CI_Controller {
 
                     if (isset($userData['shipOwner']) && count($userData['shipOwner']) > 0 && isset($userData['container'])) {
                         $response = $this->parser->parse(
-                            'quote', 
+                            'quote',
                             array( 'ctnType'   => $userData['container'],
                                    'shipOwner' => $userData['shipOwner'],
                                    'items'     => $result),
@@ -258,10 +258,10 @@ class Ddqddz extends CI_Controller {
 
         $this->weixin->sendResponse($this->handleRequest());
     }
-    
+
     public function index_cli($index = '01') {
         ! is_cli() && show_404();
-        
+
         $this->load->library('weixin');
         $xml = 'xml'.$index;
         include DATAPATH.'raw/message.php';
@@ -281,7 +281,7 @@ class Ddqddz extends CI_Controller {
             log_message('info', '>>> '.__METHOD__.'() logs: Invalid queryType:'.$data['queryType']);
             return FALSE;
         }
-        
+
         //if (($apcData = $this->cache->apc->get($userName)) === FALSE) {
         //    $apcData = array();
         //}
@@ -296,7 +296,7 @@ class Ddqddz extends CI_Controller {
         $this->cache->apc->save($userName, $apcData, 720);
         return $apcData;
     }
-    
+
     public function test() {
         echo 'test OK';
     }

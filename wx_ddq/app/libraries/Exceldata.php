@@ -25,7 +25,7 @@ class Exceldata {
         } else {
             $CI =& get_instance();
             $CI->load->library('PHPExcel');
-            
+
             $filetime = filemtime($file);
             if ($filetime == $CI->cache->apc->get('filetime')) {
                 $this->excel = $CI->cache->apc->get('exceldata');
@@ -99,7 +99,7 @@ class Exceldata {
             }
         }
         if (! isset($data['landmark'])) {
-           return '没有查到该地标：'.$landmark; 
+           return '没有查到该地标：'.$landmark;
         }
 
         $this->excel->setActiveSheetIndexByName('Customer');
@@ -136,7 +136,7 @@ class Exceldata {
             }
         }
         if (! isset($data['customer'])) {
-           return '没有查到该抬头：'.$customer; 
+           return '没有查到该抬头：'.$customer;
         }
         return $data;
         //return $this->CI->parser->parse('customer', $data, TRUE);
@@ -147,7 +147,7 @@ class Exceldata {
             log_message('info', '>>> '.__METHOD__."() logs: invalid parameter");
             return '查询暂不可用';
         }
-        
+
         $this->excel->setActiveSheetIndexByName('Pricelist');
         $activeSheet = $this->excel->getActiveSheet();
 
@@ -237,7 +237,7 @@ class Exceldata {
         if ($activeSheet->getCell('G1')->getValue() != '姓名') {
             return 'Table structure changed';
         }
-        
+
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
             if ($activeSheet->getCell('G'.$r)->getValue() == $contact) {
