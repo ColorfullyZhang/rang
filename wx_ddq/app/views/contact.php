@@ -1,5 +1,5 @@
 【姓名】{contact}
-【公司】{customer}
+【抬头】{customer}
 【名片】{namecard}
 【职位】{pos}
 【电话】{tel}

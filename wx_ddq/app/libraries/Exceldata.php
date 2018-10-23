@@ -30,7 +30,7 @@ class Exceldata {
             if ($filetime == $CI->cache->apc->get('filetime')) {
                 $this->excel = $CI->cache->apc->get('exceldata');
             }
-            if ($this->excel === FALSE) {
+            if ($this->excel == FALSE) {
                 $CI->load->library('PHPExcel/PHPExcel_IOFactory');
                 $reader = PHPExcel_IOFactory::createReaderForFile($file);
                 $this->excel = $reader->load($file);
@@ -93,9 +93,10 @@ class Exceldata {
         $activeSheet = $this->excel->getActiveSheet();
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('A'.$r)->getValue() == $landmark) {
-                $data['landmark'] = $activeSheet->getCell('A'.$r)->getValue();
-                $data['address'] = $activeSheet->getCell('B'.$r)->getValue();
+            if ($activeSheet->getCell('B'.$r)->getValue() == $landmark) {
+                $data['visit']    = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('A'.$r)->getValue()));
+                $data['landmark'] = $activeSheet->getCell('B'.$r)->getValue();
+                $data['address']  = $activeSheet->getCell('C'.$r)->getValue();
             }
         }
         if (! isset($data['landmark'])) {
@@ -128,15 +129,27 @@ class Exceldata {
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
             if ($activeSheet->getCell('A'.$r)->getValue() == $customer) {
+                $data['visit']    = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('F'.$r)->getValue()));
                 $data['customer'] = $activeSheet->getCell('A'.$r)->getValue();
                 $data['landmark'] = $activeSheet->getCell('C'.$r)->getValue();
                 $data['address']  = $activeSheet->getCell('D'.$r)->getValue();
                 $data['confirm']  = $activeSheet->getCell('E'.$r)->getValue();
-                $data['focus']    = $activeSheet->getCell('F'.$r)->getValue();
+                $data['focus']    = $activeSheet->getCell('G'.$r)->getValue();
             }
         }
         if (! isset($data['customer'])) {
            return '没有查到该抬头：'.$customer;
+        }
+        
+        $this->excel->setActiveSheetIndexByName('Contacts');
+        $activeSheet = $this->excel->getActiveSheet();
+        foreach ($activeSheet->getRowIterator() as $row) {
+            if (($r = $row->getRowIndex()) == 1) continue;
+            if ($activeSheet->getCell('A'.$r)->getValue() == $customer) {
+                $data['contacts'][] = array(
+                    'contact' => $activeSheet->getCell('F'.$r)->getValue(),
+                );
+            }
         }
         return $data;
         //return $this->CI->parser->parse('customer', $data, TRUE);
@@ -234,21 +247,21 @@ class Exceldata {
 
         $this->excel->setActiveSheetIndexByName('Contacts');
         $activeSheet = $this->excel->getActiveSheet();
-        if ($activeSheet->getCell('G1')->getValue() != '姓名') {
+        if ($activeSheet->getCell('F1')->getValue() != '姓名') {
             return 'Table structure changed';
         }
 
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($activeSheet->getCell('G'.$r)->getValue() == $contact) {
+            if ($activeSheet->getCell('F'.$r)->getValue() == $contact) {
                 $data = array(
-                    'customer' => $activeSheet->getCell('B'.$r)->getValue(),
+                    'customer' => $activeSheet->getCell('A'.$r)->getValue(),
                     'contact'  => $contact,
-                    'namecard' => date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('F'.$r)->getValue())),
-                    'pos'      => $activeSheet->getCell('H'.$r)->getValue(),
-                    'mob'      => $activeSheet->getCell('I'.$r)->getValue(),
-                    'tel'      => $activeSheet->getCell('J'.$r)->getValue(),
-                    'note'     => $activeSheet->getCell('K'.$r)->getValue()
+                    'namecard' => date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('E'.$r)->getValue())),
+                    'pos'      => $activeSheet->getCell('G'.$r)->getValue(),
+                    'mob'      => $activeSheet->getCell('H'.$r)->getValue(),
+                    'tel'      => $activeSheet->getCell('I'.$r)->getValue(),
+                    'note'     => $activeSheet->getCell('J'.$r)->getValue()
                 );
             }
         }
