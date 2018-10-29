@@ -97,6 +97,7 @@ class Exceldata {
                 $data['visit']    = date('Y-m-d', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('A'.$r)->getValue()));
                 $data['landmark'] = $activeSheet->getCell('B'.$r)->getValue();
                 $data['address']  = $activeSheet->getCell('C'.$r)->getValue();
+                $data['focus']    = $activeSheet->getCell('D'.$r)->getValue();
             }
         }
         if (! isset($data['landmark'])) {
