@@ -133,8 +133,9 @@ class Ddqddz extends CI_Controller {
 
             $userData = $this->getQueryData($this->weixin->message->getFromUserName());
             if (is_null($userData)) {
-                $response = '请先选择查询类型';
-                break;
+                // 默认查报价
+                $this->saveQueryData($this->weixin->message->getFromUserName(), array('queryType' => self::QUERY_QUOTATION));
+                $userData = $this->getQueryData($this->weixin->message->getFromUserName());
             }
             $queryType = $userData['queryType'];
             $content   = $this->weixin->message->getContent();
