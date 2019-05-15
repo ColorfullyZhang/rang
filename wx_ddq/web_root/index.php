@@ -23,7 +23,7 @@ switch (ENVIRONMENT) {
 }
 
 $system_path = '../ci';
-$application_folder = '../app';
+$application_folder = '../app_yjc';
 $data_folder = '../data';
 $log_folder = '../logs';
 $view_folder = '';
