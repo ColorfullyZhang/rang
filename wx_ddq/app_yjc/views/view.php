@@ -1,6 +1,6 @@
 <?php
 foreach ($prjs as $prj) {
-    echo $prj['project'] . ' ' . $prj['etd'] . PHP_EOL;
+    echo $prj['etd'] . ' ' . $prj['project'] . PHP_EOL;
     echo $prj['vessel_en'] . ' ' . $prj['voyage'] . PHP_EOL;
     echo $prj['vessel_cn'] . PHP_EOL;
     foreach ($prj['ctns'] as $ctn => $bls) {
