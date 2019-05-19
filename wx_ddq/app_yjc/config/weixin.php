@@ -6,12 +6,4 @@ $config['weixin_appSecret']      = '3df5deb997a99b594a61f54fc26b464f';
 $config['weixin_encodingAESKey'] = '';
 $config['weixin_token']          = 'ddqddz';
 
-$config['weixin_help']           = <<<EOF
-回复序号查询
-?： 看帮助
-1： 查地标
-2： 查公司
-3： 查客户
-4： 查同事
-5： 查报价
-EOF;
+$config['weixin_help']           = '回复中文船名最后一个字或者箱号最后两位查询';
