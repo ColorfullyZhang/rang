@@ -35,21 +35,21 @@ class Exceldata {
         $this->excel->setActiveSheetIndexByName('数据');
         $activeSheet = $this->excel->getActiveSheet();
         $data = [];
-        $project = '';
-        $etd = 0;
+        $projects = [];
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
             if (in_array($content, [mb_substr($activeSheet->getCell('E'.$r)->getValue(), -1),
                                     substr($activeSheet->getCell('F'.$r)->getValue(), -2),
                                     substr($activeSheet->getCell('G'.$r)->getValue(), -2)])) {
-                $project = $activeSheet->getCell('A'.$r)->getValue();
-                $etd = $activeSheet->getCell('B'.$r)->getValue();
-                break;
+                $projects[] = str_replace(' ', '', $activeSheet->getCell('A'.$r)->getValue()).
+                    date('ymd', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('B'.$r)->getValue()));
             }
         }
-        if ($project != '') foreach ($activeSheet->getRowIterator() as $row) {
+        $projects = array_unique($projects);
+        if (count($projects) > 0) foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
-            if ($project == $activeSheet->getCell('A'.$r)->getValue() && $etd == $activeSheet->getCell('B'.$r)->getValue()) {
+            if (in_array(str_replace(' ', '', $activeSheet->getCell('A'.$r)->getValue()).
+                    date('ymd', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('B'.$r)->getValue())), $projects)) {
                 $key = str_replace(' ', '', $activeSheet->getCell('A'.$r)->getValue()).
                     date('ymd', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('B'.$r)->getValue()));
                 if (!array_key_exists($key, $data))
