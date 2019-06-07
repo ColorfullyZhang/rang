@@ -39,8 +39,8 @@ class Exceldata {
         foreach ($activeSheet->getRowIterator() as $row) {
             if (($r = $row->getRowIndex()) == 1) continue;
             if (in_array($content, [mb_substr($activeSheet->getCell('E'.$r)->getValue(), -1),
-                                    substr($activeSheet->getCell('F'.$r)->getValue(), -2),
-                                    substr($activeSheet->getCell('G'.$r)->getValue(), -2)])) {
+                                    substr($activeSheet->getCell('F'.$r)->getValue(), -3),
+                                    substr($activeSheet->getCell('G'.$r)->getValue(), -3)])) {
                 $projects[] = str_replace(' ', '', $activeSheet->getCell('A'.$r)->getValue()).
                     date('ymd', PHPExcel_Shared_Date::ExcelToPHP($activeSheet->getCell('B'.$r)->getValue()));
             }
